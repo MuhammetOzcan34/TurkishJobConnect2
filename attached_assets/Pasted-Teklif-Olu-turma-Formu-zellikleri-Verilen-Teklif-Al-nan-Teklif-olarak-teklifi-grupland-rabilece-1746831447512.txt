@@ -1,0 +1,34 @@
+Teklif Oluşturma Formu özellikleri:
+Verilen Teklif / Alınan Teklif olarak teklifi gruplandırabileceğim bir alan olmalı. Verilen Tekliflerde Verilen teklifler, Alınan Teklif altında alınan teklifler görünecek. 
+(Bu Formu iki bölüm olarak düşünelim. İlk bölüm genel bilgileri içeren alan, ikinci bölüm ürün yada hizmet bilgilerini içeren alanlara sahip olacak.
+En üstte Dinamik arama çubuğu olacak. Cari Hesaplar sayfasındaki görünüm ile uyumlu olacak ve aynı yerde olması daha tutarlı bir sayfa görüntüsü oluşturur. Arama yapıldığında altta yan yana bulunan iki listedede dinamik şekilde sonuçlaeı listelenecek. 
+
+Başlıklar; 
+(1. Bölüm için genel bilgiler olan bölüm)
+Teklif Türü: Fiyat Teklifi - Satınalma Teklifi Check box olsun. En üstte sağda olsun. Hangisi seçilirse Sayfa Başlığı Check box ta seçilen olarak değişsin.
+Benzersiz ID: (Numerik) ID otomatik oluştur. (gizli)
+Teklif No: Ouşturulan her yeni teklif no sıralı şekilde devam edecek
+Teklif Türü: Verilen Teklif (Teklif no bu seçimde FT0001 den başlayacak. Verilen Tekliflere ekleyecek Google Sheets de açılan Verilen Teklifler sayfasına ekleyecek. Varsayılan seçili olacak) - Alınan Teklif (Alınan Tekliflere ekleyecek Google Sheets de açılan Alınan Teklifler sayfasına ekleyecek. teklif no buseçimde ST0001 den başlayacak)
+Tarih: 
+Firma Adı: CARİ HESAPLAR sayfasında oluşturduğumuz Cari Kartlardan seçilecek - açılır liste. 
+Teklif Konusu:
+Yetkili Kişi: (Yetkili, CARİ HESAPLAR sayfasında oluşturduğumuz kişilerden seçilecek - açılır liste. 
+Teklif Durumu: Açılır liste: (Beklemede, Onaylandı, Kaybedildi, İptal) 
+Ödeme Şekli: 
+Geçerlilik Süresi: 
+A. Teklifler: Çoktan Seçmeli Açılır Liste: (Bir sonraki sayfada “alınan teklifler"in seçimini yapabileceğim veri giriş alanı.
+Dosyalar: (bir veya birden çok Dosya veya dokümanların eklenip görüntülenecek Drive a bağlı) 
+(2. Bölüm için ürün hizmet bilgiler olan bölüm)
+Bu alan aşağıdaki sütun başlıklarını içeren bir tablo olmalı. Birden fazla ürün/hizmet girmek istenirse “EKLE” butonu ile alta bir satır daha ekleyerek genişletilebilir bir tablo.
+Özellikleri: 
+Ürün / Hizmet Adı:
+Miktar: Sayısal veri giriş alanı binlik ayraç (nokta ile)
+Birim: Açılır Liste: (Adet, Cilt, Koçan, Paket, Koli, Ton, Kg, g, Lt, ml, Metre)
+Birim Fiyat: Ürün fiyatı sayısal binlik ayraç (nokta ile) ve virgülden sonra 2 hane (Örn: 9.010.25 TL)
+₺/$/€: Açılır Liste: (₺/$/€) Seçilen para birimi fiyat alanlarının tamamında gösterilsin
+Tutar: “Miktar” x “Birim Fiyat” binlik ayraç (nokta ile) ve virgülden sonra 2 hane
+İskonto Tutarı: bu alan OPSİYONEL olmalı. İskonto yapılmak istenirse gösterilmeli. binlik ayraç (nokta ile) ve virgülden sonra 2 hane
+Net Tutar: Bu alan görünmeyecek! =“Tutar” - “İskonto Tutarı”
+KDV Oranı: Sayısal değer girilecek ve % işareti olacak (Örn:20%) Opsiyonel olmalı, istenirse KDV Oranı sütunu görünmeli.
+Toplam Tutar:“Net Tutar”+ (“Net Tutar” x “KDV Oranı”)
+KAYDET Butonu
