@@ -1,8 +1,13 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage"; // './storage' dosyasının var olduğundan ve doğru exportları yaptığından emin olun
+// storage nesnesini import edin. Bu dosyanın (./storage) var olduğundan
+// ve IStorage arayüzünü uygulayan bir nesneyi (MemStorage veya DatabaseStorage)
+// doğru şekilde export ettiğinden emin olun.
+import { storage } from "./storage";
 import { z } from "zod";
-import { generatePdfQuote } from "./utils/pdf"; // './utils/pdf' dosyasının var olduğundan emin olun
+// PDF oluşturma fonksiyonunu import edin. Bu dosyanın (./utils/pdf) var olduğundan emin olun.
+import { generatePdfQuote } from "./utils/pdf";
+// Paylaşılan şemaları import edin.
 import {
   insertUserSchema,
   insertAccountSchema,
@@ -18,90 +23,81 @@ import {
   Quote // Teklif tipi için
 } from "@shared/schema";
 import { format } from "date-fns";
-import { tr } from "date-fns/locale";
+import { tr } from "date-fns/locale"; // Türkçe dil desteği için
 import bcrypt from 'bcryptjs'; // Şifreleme için bcryptjs'i import edin
-import dashboardRoutes from './api/dashboardRoutes'; // Dashboard rotalarını import et
+// Dashboard rotalarını içeren dosyayı import edin.
+// Bu dosyanın (./api/dashboardRoutes) var olduğundan ve Express Router export ettiğinden emin olun.
+import dashboardRoutes from './api/dashboardRoutes';
 
+// Tüm API rotalarını Express uygulamasına kaydeden asenkron fonksiyon
 export async function registerRoutes(app: Express): Promise<Server> {
+  // HTTP sunucusunu oluştur (Express uygulaması ile ilişkilendirilir)
   const httpServer = createServer(app);
 
-  // Test rotası
+  // Test rotası: Sunucunun ayakta olup olmadığını kontrol etmek için basit bir endpoint
   app.get("/api/test-ping", (req: Request, res: Response) => {
     console.log("[Sunucu] /api/test-ping isteği alındı!");
-    res.status(200).json({ message: "Sunucu ayakta ve çalışıyor!" });
+    res.status(200).json({ message: "Sunucu ayakta ve çalışıyor!" }); // Kullanıcıya gösterilen mesaj
   });
 
-  // Dashboard Rotaları
-  app.use('/api', dashboardRoutes); // '/api/dashboard/stats' gibi adresleri aktif hale getirecek
+  // Dashboard Rotalarını Express uygulamasına bağla
+  // dashboardRoutes.ts dosyasındaki rotalar '/dashboard/stats' gibi başlıyorsa,
+  // buradaki '/api' ön eki ile birleşerek '/api/dashboard/stats' adresini oluşturur.
+  app.use('/api', dashboardRoutes);
 
-  // API Rotaları
+  // Diğer API Rotaları
 
   // Kullanıcı rotaları
   app.get("/api/users", async (req: Request, res: Response) => {
     try {
       const allUsers = await storage.getUsers();
-      // Şifreleri yanıttan çıkar
+      // Güvenlik: Şifreleri yanıttan çıkar
       res.json(allUsers.map(({ password, ...userWithoutPassword }) => userWithoutPassword));
     } catch (error: any) {
-      console.error("Kullanıcılar alınırken hata:", error);
-      res.status(500).json({ message: "Kullanıcılar alınırken bir sunucu hatası oluştu." });
+      console.error("Kullanıcılar alınırken hata:", error); // Sunucu loguna hata detayını yaz
+      res.status(500).json({ message: "Kullanıcılar alınırken bir sunucu hatası oluştu." }); // Kullanıcıya genel hata mesajı
     }
   });
 
   app.post("/api/users", async (req: Request, res: Response) => {
     try {
+      // Gelen veriyi Zod şeması ile doğrula
       const validatedData = insertUserSchema.parse(req.body);
 
-      // Şifreyi hash'le
+      // Güvenlik: Şifreyi hash'le
       const hashedPassword = await bcrypt.hash(validatedData.password, 10);
 
+      // Kullanıcıyı veritabanına kaydet (hashlenmiş şifre ile)
       const newUser = await storage.createUser({
         ...validatedData,
         password: hashedPassword, // Hash'lenmiş şifreyi kaydet
       });
 
-      const { password, ...userWithoutPassword } = newUser; // Şifreyi yanıttan çıkar
-      res.status(201).json(userWithoutPassword);
+      // Güvenlik: Şifreyi yanıttan çıkar
+      const { password, ...userWithoutPassword } = newUser;
+      res.status(201).json(userWithoutPassword); // Başarılı yanıt (201 Created)
     } catch (error) {
+      // Zod validasyon hatası yakalama
       if (error instanceof z.ZodError) {
-        // Zod hatalarını formatlayarak daha anlaşılır hale getir
-        return res.status(400).json({ message: "Geçersiz kullanıcı bilgileri.", errors: error.format() });
+        // Geçersiz veri durumunda 400 Bad Request dön ve hata detaylarını gönder
+        return res.status(400).json({ message: "Geçersiz kullanıcı bilgileri.", errors: error.format() }); // Kullanıcıya gösterilen mesaj
       } else {
-        console.error("Kullanıcı oluşturulurken hata:", error);
-        res.status(500).json({ message: "Kullanıcı oluşturulurken bir sunucu hatası oluştu." });
+        // Diğer sunucu hatalarını yakalama
+        console.error("Kullanıcı oluşturulurken hata:", error); // Sunucu loguna hata detayını yaz
+        res.status(500).json({ message: "Kullanıcı oluşturulurken bir sunucu hatası oluştu." }); // Kullanıcıya genel hata mesajı
       }
     }
   });
 
   // Dashboard rotaları ARTIK dashboardRoutes.ts DOSYASINDA TANIMLI
-  // Bu bloklar buradan kaldırılabilir veya dashboardRoutes.ts içindeki tanımlarla çakışmaması için yorum satırına alınabilir.
-  // Eğer dashboardRoutes.ts dosyasındaki tanımlar /api/dashboard ön ekiyle başlıyorsa,
-  // app.use('/api', dashboardRoutes); satırı yeterlidir.
-  // Eğer dashboardRoutes.ts dosyasındaki tanımlar sadece /stats, /activities gibi ise,
-  // o zaman app.use('/api/dashboard', dashboardRoutes); şeklinde kullanılmalıdır.
-  // Mevcut dashboardRoutes.ts dosyanızda rotalar /dashboard/stats şeklinde olduğu için
-  // app.use('/api', dashboardRoutes); kullanımı doğrudur.
+  // Bu bloklar buradan kaldırıldı veya yorum satırına alındı.
+  // app.use('/api', dashboardRoutes); satırı bu rotaları otomatik olarak bağlar.
 
   /*
   app.get("/api/dashboard/stats", async (req: Request, res: Response) => {
     // ... (Bu kod artık dashboardRoutes.ts içinde)
   });
-
-  app.get("/api/dashboard/activities", async (req: Request, res: Response) => {
-    // ... (Bu kod artık dashboardRoutes.ts içinde)
-  });
-
-  app.get("/api/dashboard/upcoming-tasks", async (req: Request, res: Response) => {
-    // ... (Bu kod artık dashboardRoutes.ts içinde)
-  });
-
-  app.get("/api/dashboard/active-projects", async (req: Request, res: Response) => {
-    // ... (Bu kod artık dashboardRoutes.ts içinde)
-  });
-
-  app.get("/api/dashboard/recent-quotes", async (req: Request, res: Response) => {
-    // ... (Bu kod artık dashboardRoutes.ts içinde)
-  });
+  // ... diğer dashboard rotaları ...
   */
 
 
@@ -124,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(accountsWithCounts);
     } catch (error: any) {
       console.error("Cari hesaplar alınırken hata:", error);
-      res.status(500).json({ message: "Cari hesaplar alınırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Cari hesaplar alınırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -135,22 +131,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(account);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Geçersiz cari hesap bilgileri.", errors: error.format() });
+        return res.status(400).json({ message: "Geçersiz cari hesap bilgileri.", errors: error.format() }); // Kullanıcıya gösterilen mesaj
       }
       console.error("Cari hesap oluşturulurken hata:", error);
-      res.status(500).json({ message: "Cari hesap oluşturulurken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Cari hesap oluşturulurken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
   app.get("/api/accounts/:id", async (req: Request, res: Response) => {
     try {
       const accountId = parseInt(req.params.id);
+      // ID'nin geçerli bir sayı olup olmadığını kontrol et
       if (isNaN(accountId)) {
-        return res.status(400).json({ message: "Geçersiz hesap ID." });
+        return res.status(400).json({ message: "Geçersiz hesap ID." }); // Kullanıcıya gösterilen mesaj
       }
       const account = await storage.getAccount(accountId);
       if (!account) {
-        return res.status(404).json({ message: "Cari hesap bulunamadı." });
+        return res.status(404).json({ message: "Cari hesap bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       // Bakiye hesaplama
       const transactions = await storage.getTransactionsByAccount(accountId);
@@ -161,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ ...account, totalDebit, totalCredit, balance });
     } catch (error: any) {
       console.error(`Cari hesap ${req.params.id} detayları alınırken hata:`, error);
-      res.status(500).json({ message: "Cari hesap detayları alınırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Cari hesap detayları alınırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -169,20 +166,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const accountId = parseInt(req.params.id);
       if (isNaN(accountId)) {
-        return res.status(400).json({ message: "Geçersiz hesap ID." });
+        return res.status(400).json({ message: "Geçersiz hesap ID." }); // Kullanıcıya gösterilen mesaj
       }
       const accountData = insertAccountSchema.parse(req.body);
       const updatedAccount = await storage.updateAccount(accountId, accountData);
       if (!updatedAccount) {
-        return res.status(404).json({ message: "Güncellenecek cari hesap bulunamadı." });
+        return res.status(404).json({ message: "Güncellenecek cari hesap bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       res.json(updatedAccount);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Geçersiz cari hesap bilgileri.", errors: error.format() });
+        return res.status(400).json({ message: "Geçersiz cari hesap bilgileri.", errors: error.format() }); // Kullanıcıya gösterilen mesaj
       }
       console.error(`Cari hesap ${req.params.id} güncellenirken hata:`, error);
-      res.status(500).json({ message: "Cari hesap güncellenirken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Cari hesap güncellenirken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -190,18 +187,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const accountId = parseInt(req.params.id);
       if (isNaN(accountId)) {
-        return res.status(400).json({ message: "Geçersiz hesap ID." });
+        return res.status(400).json({ message: "Geçersiz hesap ID." }); // Kullanıcıya gösterilen mesaj
       }
       const success = await storage.deleteAccount(accountId);
       if (!success) {
         // storage.deleteAccount her zaman true dönüyorsa bu bloğa girmez.
         // Gerçek veritabanı işlemlerinde silme işleminin sonucuna göre kontrol edin.
-        return res.status(404).json({ message: "Silinecek cari hesap bulunamadı." });
+        return res.status(404).json({ message: "Silinecek cari hesap bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       res.status(204).send(); // Başarılı silme işleminde içerik dönülmez
     } catch (error: any) {
       console.error(`Cari hesap ${req.params.id} silinirken hata:`, error);
-      res.status(500).json({ message: "Cari hesap silinirken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Cari hesap silinirken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -210,7 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const accountId = parseInt(req.params.id);
       if (isNaN(accountId)) {
-        return res.status(400).json({ message: "Geçersiz hesap ID." });
+        return res.status(400).json({ message: "Geçersiz hesap ID." }); // Kullanıcıya gösterilen mesaj
       }
       const transactions = await storage.getTransactionsByAccount(accountId);
       // Bakiye hesaplama (her hareket sonrası)
@@ -228,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(transactionsWithBalance);
     } catch (error: any) {
       console.error(`Hesap ${req.params.id} hareketleri alınırken hata:`, error);
-      res.status(500).json({ message: "Hesap hareketleri alınırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Hesap hareketleri alınırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -237,7 +234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const accountId = parseInt(req.params.id);
       if (isNaN(accountId)) {
-        return res.status(400).json({ message: "Geçersiz hesap ID." });
+        return res.status(400).json({ message: "Geçersiz hesap ID." }); // Kullanıcıya gösterilen mesaj
       }
       const projects = await storage.getProjectsByAccount(accountId);
       const formattedProjects = projects.map(project => ({
@@ -249,7 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(formattedProjects);
     } catch (error: any) {
       console.error(`Hesap ${req.params.id} projeleri alınırken hata:`, error);
-      res.status(500).json({ message: "Hesaba ait projeler alınırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Hesaba ait projeler alınırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -258,7 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const accountId = parseInt(req.params.id);
       if (isNaN(accountId)) {
-        return res.status(400).json({ message: "Geçersiz hesap ID." });
+        return res.status(400).json({ message: "Geçersiz hesap ID." }); // Kullanıcıya gösterilen mesaj
       }
       const quotes = await storage.getQuotesByAccount(accountId);
       const formattedQuotes = quotes.map(quote => ({
@@ -269,7 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(formattedQuotes);
     } catch (error: any) {
       console.error(`Hesap ${req.params.id} teklifleri alınırken hata:`, error);
-      res.status(500).json({ message: "Hesaba ait teklifler alınırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Hesaba ait teklifler alınırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -278,7 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const accountId = parseInt(req.params.id);
       if (isNaN(accountId)) {
-        return res.status(400).json({ message: "Geçersiz hesap ID." });
+        return res.status(400).json({ message: "Geçersiz hesap ID." }); // Kullanıcıya gösterilen mesaj
       }
       const tasks = await storage.getTasksByAccount(accountId);
       const projects = await storage.getProjects(); // Proje isimleri için
@@ -295,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(formattedTasks);
     } catch (error: any) {
       console.error(`Hesap ${req.params.id} görevleri alınırken hata:`, error);
-      res.status(500).json({ message: "Hesaba ait görevler alınırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Hesaba ait görevler alınırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -307,10 +304,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(transaction);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Geçersiz işlem bilgileri.", errors: error.format() });
+        return res.status(400).json({ message: "Geçersiz işlem bilgileri.", errors: error.format() }); // Kullanıcıya gösterilen mesaj
       }
       console.error("İşlem oluşturulurken hata:", error);
-      res.status(500).json({ message: "İşlem oluşturulurken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "İşlem oluşturulurken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -330,7 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(formattedQuotes);
     } catch (error: any) {
       console.error("Teklifler alınırken hata:", error);
-      res.status(500).json({ message: "Teklifler alınırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Teklifler alınırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -356,10 +353,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(quote);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Geçersiz teklif bilgileri.", errors: error.format() });
+        return res.status(400).json({ message: "Geçersiz teklif bilgileri.", errors: error.format() }); // Kullanıcıya gösterilen mesaj
       }
       console.error("Teklif oluşturulurken hata:", error);
-      res.status(500).json({ message: "Teklif oluşturulurken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Teklif oluşturulurken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -367,24 +364,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const quoteId = parseInt(req.params.id);
       if (isNaN(quoteId)) {
-        return res.status(400).json({ message: "Geçersiz teklif ID." });
+        return res.status(400).json({ message: "Geçersiz teklif ID." }); // Kullanıcıya gösterilen mesaj
       }
       const quote = await storage.getQuote(quoteId);
       if (!quote) {
-        return res.status(404).json({ message: "Teklif bulunamadı." });
+        return res.status(404).json({ message: "Teklif bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       const account = await storage.getAccount(quote.accountId);
       const quoteItems = await storage.getQuoteItems(quoteId);
-      res.json({
+      const quoteData = {
         ...quote,
         account,
         items: quoteItems,
         formattedDate: format(new Date(quote.date), 'dd.MM.yyyy'),
         formattedValidUntil: quote.validUntil ? format(new Date(quote.validUntil), 'dd.MM.yyyy') : '-' // Türkçe
-      });
+      };
+      const pdfBuffer = await generatePdfQuote(quoteData); // Bu fonksiyonun var olduğundan emin olun
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="teklif-${quote.number}.pdf"`); // Türkçe
+      res.send(pdfBuffer);
     } catch (error: any) {
-      console.error(`Teklif ${req.params.id} detayları alınırken hata:`, error);
-      res.status(500).json({ message: "Teklif detayları alınırken bir sunucu hatası oluştu." });
+      console.error(`Teklif ${req.params.id} PDF oluşturulurken hata:`, error);
+      res.status(500).json({ message: "PDF oluşturulurken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -392,7 +393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const quoteId = parseInt(req.params.id);
       if (isNaN(quoteId)) {
-        return res.status(400).json({ message: "Geçersiz teklif ID." });
+        return res.status(400).json({ message: "Geçersiz teklif ID." }); // Kullanıcıya gösterilen mesaj
       }
       // req.body.items tipini belirtmek için geçici bir tip tanımı
       type RequestBodyWithItems = z.infer<typeof insertQuoteSchema> & { items?: (Partial<QuoteItem> & { id?: number })[] };
@@ -402,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedQuote = await storage.updateQuote(quoteId, quoteData);
 
       if (!updatedQuote) {
-        return res.status(404).json({ message: "Güncellenecek teklif bulunamadı." });
+        return res.status(404).json({ message: "Güncellenecek teklif bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
 
       if (items && Array.isArray(items)) {
@@ -430,10 +431,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedQuote);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Geçersiz teklif bilgileri.", errors: error.format() });
+        return res.status(400).json({ message: "Geçersiz teklif bilgileri.", errors: error.format() }); // Kullanıcıya gösterilen mesaj
       }
       console.error(`Teklif ${req.params.id} güncellenirken hata:`, error);
-      res.status(500).json({ message: "Teklif güncellenirken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Teklif güncellenirken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -441,7 +442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const quoteId = parseInt(req.params.id);
       if (isNaN(quoteId)) {
-        return res.status(400).json({ message: "Geçersiz teklif ID." });
+        return res.status(400).json({ message: "Geçersiz teklif ID." }); // Kullanıcıya gösterilen mesaj
       }
       // Önce ilişkili kalemleri sil
       const quoteItems = await storage.getQuoteItems(quoteId);
@@ -450,12 +451,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const success = await storage.deleteQuote(quoteId);
       if (!success) {
-        return res.status(404).json({ message: "Silinecek teklif bulunamadı." });
+        return res.status(404).json({ message: "Silinecek teklif bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       res.status(204).send();
     } catch (error: any) {
       console.error(`Teklif ${req.params.id} silinirken hata:`, error);
-      res.status(500).json({ message: "Teklif silinirken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Teklif silinirken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -476,7 +477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(formattedProjects);
     } catch (error: any) {
       console.error("Projeler alınırken hata:", error);
-      res.status(500).json({ message: "Projeler alınırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Projeler alınırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -503,10 +504,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(project);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Geçersiz proje bilgileri.", errors: error.format() });
+        return res.status(400).json({ message: "Geçersiz proje bilgileri.", errors: error.format() }); // Kullanıcıya gösterilen mesaj
       }
       console.error("Proje oluşturulurken hata:", error);
-      res.status(500).json({ message: "Proje oluşturulurken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Proje oluşturulurken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -514,11 +515,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const projectId = parseInt(req.params.id);
       if (isNaN(projectId)) {
-        return res.status(400).json({ message: "Geçersiz proje ID." });
+        return res.status(400).json({ message: "Geçersiz proje ID." }); // Kullanıcıya gösterilen mesaj
       }
       const project = await storage.getProject(projectId);
       if (!project) {
-        return res.status(404).json({ message: "Proje bulunamadı." });
+        return res.status(404).json({ message: "Proje bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       const account = await storage.getAccount(project.accountId);
       const tasks = await storage.getTasksByProject(projectId);
@@ -538,7 +539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error(`Proje ${req.params.id} detayları alınırken hata:`, error);
-      res.status(500).json({ message: "Proje detayları alınırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Proje detayları alınırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -546,20 +547,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const projectId = parseInt(req.params.id);
       if (isNaN(projectId)) {
-        return res.status(400).json({ message: "Geçersiz proje ID." });
+        return res.status(400).json({ message: "Geçersiz proje ID." }); // Kullanıcıya gösterilen mesaj
       }
       const projectData = insertProjectSchema.parse(req.body);
       const updatedProject = await storage.updateProject(projectId, projectData);
       if (!updatedProject) {
-        return res.status(404).json({ message: "Güncellenecek proje bulunamadı." });
+        return res.status(404).json({ message: "Güncellenecek proje bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       res.json(updatedProject);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Geçersiz proje bilgileri.", errors: error.format() });
+        return res.status(400).json({ message: "Geçersiz proje bilgileri.", errors: error.format() }); // Kullanıcıya gösterilen mesaj
       }
       console.error(`Proje ${req.params.id} güncellenirken hata:`, error);
-      res.status(500).json({ message: "Proje güncellenirken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Proje güncellenirken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -567,16 +568,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const projectId = parseInt(req.params.id);
       if (isNaN(projectId)) {
-        return res.status(400).json({ message: "Geçersiz proje ID." });
+        return res.status(400).json({ message: "Geçersiz proje ID." }); // Kullanıcıya gösterilen mesaj
       }
       const success = await storage.deleteProject(projectId);
       if (!success) {
-        return res.status(404).json({ message: "Silinecek proje bulunamadı." });
+        return res.status(404).json({ message: "Silinecek proje bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       res.status(204).send();
     } catch (error: any) {
       console.error(`Proje ${req.params.id} silinirken hata:`, error);
-      res.status(500).json({ message: "Proje silinirken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Proje silinirken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -600,7 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(formattedTasks);
     } catch (error: any) {
       console.error("Görevler alınırken hata:", error);
-      res.status(500).json({ message: "Görevler alınırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Görevler alınırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -611,10 +612,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(task);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Geçersiz görev bilgileri.", errors: error.format() });
+        return res.status(400).json({ message: "Geçersiz görev bilgileri.", errors: error.format() }); // Kullanıcıya gösterilen mesaj
       }
       console.error("Görev oluşturulurken hata:", error);
-      res.status(500).json({ message: "Görev oluşturulurken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Görev oluşturulurken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -622,16 +623,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const taskId = parseInt(req.params.id);
       if (isNaN(taskId)) {
-        return res.status(400).json({ message: "Geçersiz görev ID." });
+        return res.status(400).json({ message: "Geçersiz görev ID." }); // Kullanıcıya gösterilen mesaj
       }
       const task = await storage.getTask(taskId);
       if (!task) {
-        return res.status(404).json({ message: "Görev bulunamadı." });
+        return res.status(404).json({ message: "Görev bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       res.json(task);
     } catch (error: any) {
       console.error(`Görev ${req.params.id} detayları alınırken hata:`, error);
-      res.status(500).json({ message: "Görev detayları alınırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Görev detayları alınırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -639,20 +640,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const taskId = parseInt(req.params.id);
       if (isNaN(taskId)) {
-        return res.status(400).json({ message: "Geçersiz görev ID." });
+        return res.status(400).json({ message: "Geçersiz görev ID." }); // Kullanıcıya gösterilen mesaj
       }
       const taskData = insertTaskSchema.parse(req.body);
       const updatedTask = await storage.updateTask(taskId, taskData);
       if (!updatedTask) {
-        return res.status(404).json({ message: "Güncellenecek görev bulunamadı." });
+        return res.status(404).json({ message: "Güncellenecek görev bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       res.json(updatedTask);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Geçersiz görev bilgileri.", errors: error.format() });
+        return res.status(400).json({ message: "Geçersiz görev bilgileri.", errors: error.format() }); // Kullanıcıya gösterilen mesaj
       }
       console.error(`Görev ${req.params.id} güncellenirken hata:`, error);
-      res.status(500).json({ message: "Görev güncellenirken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Görev güncellenirken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -660,7 +661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const taskId = parseInt(req.params.id);
       if (isNaN(taskId)) {
-        return res.status(400).json({ message: "Geçersiz görev ID." });
+        return res.status(400).json({ message: "Geçersiz görev ID." }); // Kullanıcıya gösterilen mesaj
       }
       const schema = z.object({
         status: z.enum(['todo', 'in-progress', 'completed'])
@@ -668,15 +669,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { status } = schema.parse(req.body);
       const updatedTask = await storage.updateTaskStatus(taskId, status);
       if (!updatedTask) {
-        return res.status(404).json({ message: "Durumu güncellenecek görev bulunamadı." });
+        return res.status(404).json({ message: "Durumu güncellenecek görev bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       res.json(updatedTask);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Geçersiz durum bilgisi.", errors: error.format() });
+        return res.status(400).json({ message: "Geçersiz durum bilgisi.", errors: error.format() }); // Kullanıcıya gösterilen mesaj
       }
       console.error(`Görev ${req.params.id} durumu güncellenirken hata:`, error);
-      res.status(500).json({ message: "Görev durumu güncellenirken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Görev durumu güncellenirken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -684,16 +685,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const taskId = parseInt(req.params.id);
       if (isNaN(taskId)) {
-        return res.status(400).json({ message: "Geçersiz görev ID." });
+        return res.status(400).json({ message: "Geçersiz görev ID." }); // Kullanıcıya gösterilen mesaj
       }
       const success = await storage.deleteTask(taskId);
       if (!success) {
-        return res.status(404).json({ message: "Silinecek görev bulunamadı." });
+        return res.status(404).json({ message: "Silinecek görev bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       res.status(204).send();
     } catch (error: any) {
       console.error(`Görev ${req.params.id} silinirken hata:`, error);
-      res.status(500).json({ message: "Görev silinirken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Görev silinirken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -708,12 +709,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserByUsername(username);
 
       if (!user) {
-        return res.status(401).json({ message: "Kullanıcı adı veya şifre hatalı." }); // Türkçe
+        return res.status(401).json({ message: "Kullanıcı adı veya şifre hatalı." }); // Kullanıcıya gösterilen mesaj
       }
-      // Şifreleri güvenli bir şekilde karşılaştır
+      // Güvenlik: Şifreleri güvenli bir şekilde karşılaştır
       const isPasswordMatch = await bcrypt.compare(plainPassword, user.password);
       if (!isPasswordMatch) {
-        return res.status(401).json({ message: "Kullanıcı adı veya şifre hatalı." }); // Türkçe
+        return res.status(401).json({ message: "Kullanıcı adı veya şifre hatalı." }); // Kullanıcıya gösterilen mesaj
       }
       const { password: _, ...userWithoutPassword } = user; // Şifreyi yanıttan çıkar
       res.json({
@@ -722,10 +723,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Geçersiz giriş bilgileri.", errors: error.format() });
+        return res.status(400).json({ message: "Geçersiz giriş bilgileri.", errors: error.format() }); // Kullanıcıya gösterilen mesaj
       }
       console.error("Giriş yapılırken hata:", error);
-      res.status(500).json({ message: "Giriş yapılırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Giriş yapılırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -743,7 +744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(userWithoutPassword);
     } catch (error: any) {
       console.error("Profil bilgileri alınırken hata:", error);
-      res.status(500).json({ message: "Profil bilgileri alınırken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Profil bilgileri alınırken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -752,11 +753,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const quoteId = parseInt(req.params.id);
       if (isNaN(quoteId)) {
-        return res.status(400).json({ message: "Geçersiz teklif ID." });
+        return res.status(400).json({ message: "Geçersiz teklif ID." }); // Kullanıcıya gösterilen mesaj
       }
       const quote = await storage.getQuote(quoteId);
       if (!quote) {
-        return res.status(404).json({ message: "Teklif bulunamadı." });
+        return res.status(404).json({ message: "Teklif bulunamadı." }); // Kullanıcıya gösterilen mesaj
       }
       const account = await storage.getAccount(quote.accountId);
       const quoteItems = await storage.getQuoteItems(quoteId);
@@ -773,7 +774,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(pdfBuffer);
     } catch (error: any) {
       console.error(`Teklif ${req.params.id} PDF oluşturulurken hata:`, error);
-      res.status(500).json({ message: "PDF oluşturulurken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "PDF oluşturulurken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
@@ -801,13 +802,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(monthlyData);
     } catch (error: any) {
       console.error("Finansal rapor oluşturulurken hata:", error);
-      res.status(500).json({ message: "Finansal rapor oluşturulurken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Finansal rapor oluşturulurken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
   app.get("/api/reports/projects", async (req: Request, res: Response) => {
     try {
       const projects = await storage.getProjects();
+      // Proje durumlarına göre sayım yap
       const statusCounts = projects.reduce((acc, p) => {
         acc[p.status] = (acc[p.status] || 0) + 1;
         return acc;
@@ -815,18 +817,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ statusCounts, projects });
     } catch (error: any) {
       console.error("Projeler raporu oluşturulurken hata:", error);
-      res.status(500).json({ message: "Projeler raporu oluşturulurken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Projeler raporu oluşturulurken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
   app.get("/api/reports/quotes", async (req: Request, res: Response) => {
     try {
       const quotes = await storage.getQuotes();
+      // Teklif durumlarına göre sayım yap
       const statusCounts = quotes.reduce((acc, q) => {
         acc[q.status] = (acc[q.status] || 0) + 1;
         return acc;
       }, {} as Record<Quote['status'], number>); // Tip belirleme
 
+      // Teklif durumlarına göre toplam tutar hesapla
       const totalAmounts = quotes.reduce((acc, q) => {
         acc[q.status] = (acc[q.status] || 0) + Number(q.totalAmount);
         return acc;
@@ -835,9 +839,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ statusCounts, totalAmounts, quotes });
     } catch (error: any) {
       console.error("Teklifler raporu oluşturulurken hata:", error);
-      res.status(500).json({ message: "Teklifler raporu oluşturulurken bir sunucu hatası oluştu." });
+      res.status(500).json({ message: "Teklifler raporu oluşturulurken bir sunucu hatası oluştu." }); // Kullanıcıya gösterilen mesaj
     }
   });
 
+  // Oluşturulan HTTP sunucusunu döndür
   return httpServer;
 }
