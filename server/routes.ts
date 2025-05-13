@@ -1,3 +1,7 @@
+app.get("/api/test-ping", (req: Request, res: Response) => {
+  console.log("[Sunucu] /api/test-ping isteği alındı!");
+  res.status(200).json({ message: "Sunucu ayakta ve çalışıyor!" });
+});
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
