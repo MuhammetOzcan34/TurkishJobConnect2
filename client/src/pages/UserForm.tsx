@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -36,7 +35,7 @@ export default function UserForm() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: {
@@ -48,29 +47,35 @@ export default function UserForm() {
       position: "",
     },
   });
-  
+
   const createMutation = useMutation({
     mutationFn: async (data: UserFormValues) => {
       const response = await apiRequest("POST", "/api/users", data);
+      // Sunucudan gelen yanıtın JSON formatında olduğundan emin olun
+      if (!response.ok) {
+        // Hata durumunda, sunucudan gelen mesajı yakalamaya çalışın
+        const errorData = await response.json().catch(() => ({ message: "Bilinmeyen sunucu hatası" }));
+        throw new Error(errorData.message || "Kullanıcı oluşturulamadı");
+      }
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: "Kullanıcı oluşturuldu",
-        description: "Yeni kullanıcı başarıyla oluşturuldu.",
+        title: "Kullanıcı Oluşturuldu",
+        description: "Yeni kullanıcı başarıyla eklendi.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       navigate("/users");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Hata",
-        description: "Kullanıcı oluşturulurken bir hata oluştu.",
+        description: error.message || "Kullanıcı oluşturulurken bir hata oluştu.",
         variant: "destructive",
       });
     },
   });
-  
+
   function onSubmit(data: UserFormValues) {
     createMutation.mutate(data);
   }
@@ -78,9 +83,9 @@ export default function UserForm() {
   return (
     <div className="space-y-6 pb-20 md:pb-6">
       <div className="flex items-center mb-4">
-        <Button 
-          variant="ghost" 
-          className="mr-2" 
+        <Button
+          variant="ghost"
+          className="mr-2"
           onClick={() => navigate("/users")}
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
@@ -88,7 +93,7 @@ export default function UserForm() {
         </Button>
         <h2 className="text-2xl font-semibold">Yeni Kullanıcı</h2>
       </div>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Kullanıcı Bilgileri</CardTitle>
@@ -110,7 +115,7 @@ export default function UserForm() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="password"
@@ -118,17 +123,18 @@ export default function UserForm() {
                     <FormItem>
                       <FormLabel>Şifre</FormLabel>
                       <FormControl>
-                        <Input 
-                          {...field} 
-                          type="password" 
-                          placeholder="Şifre girin" 
+                        <Input
+                          {...field}
+                          type="password"
+                          placeholder="Şifre girin"
+                          autoComplete="new-password"
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="name"
@@ -142,7 +148,7 @@ export default function UserForm() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="email"
@@ -156,13 +162,13 @@ export default function UserForm() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Telefon</FormLabel>
+                      <FormLabel>Telefon (İsteğe Bağlı)</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Telefon numarası" />
                       </FormControl>
@@ -170,13 +176,13 @@ export default function UserForm() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="position"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Pozisyon</FormLabel>
+                      <FormLabel>Pozisyon (İsteğe Bağlı)</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Pozisyon bilgisi" />
                       </FormControl>
@@ -185,16 +191,17 @@ export default function UserForm() {
                   )}
                 />
               </div>
-              
+
               <div className="flex justify-end space-x-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => navigate("/users")}
+                  disabled={createMutation.isPending}
                 >
                   İptal
                 </Button>
-                <Button 
+                <Button
                   type="submit"
                   disabled={createMutation.isPending}
                 >
