@@ -13,20 +13,26 @@ import {
   insertTaskSchema,
   users as usersTable, // Kullanılmıyorsa kaldırılabilir
   QuoteItem, // quoteItems için tip tanımı
-  InsertQuoteItem // quoteItems için tip tanımı
+  InsertQuoteItem, // quoteItems için tip tanımı
+  Project, // Proje tipi için
+  Quote // Teklif tipi için
 } from "@shared/schema";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import bcrypt from 'bcryptjs'; // Şifreleme için bcryptjs'i import edin
+import dashboardRoutes from './api/dashboardRoutes'; // Dashboard rotalarını import et
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
-  // Test rotası - Diğer rotalardan önce veya sonra olabilir, ancak fonksiyon içinde olmalı
+  // Test rotası
   app.get("/api/test-ping", (req: Request, res: Response) => {
     console.log("[Sunucu] /api/test-ping isteği alındı!");
     res.status(200).json({ message: "Sunucu ayakta ve çalışıyor!" });
   });
+
+  // Dashboard Rotaları
+  app.use('/api', dashboardRoutes); // '/api/dashboard/stats' gibi adresleri aktif hale getirecek
 
   // API Rotaları
 
@@ -67,129 +73,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard rotaları
+  // Dashboard rotaları ARTIK dashboardRoutes.ts DOSYASINDA TANIMLI
+  // Bu bloklar buradan kaldırılabilir veya dashboardRoutes.ts içindeki tanımlarla çakışmaması için yorum satırına alınabilir.
+  // Eğer dashboardRoutes.ts dosyasındaki tanımlar /api/dashboard ön ekiyle başlıyorsa,
+  // app.use('/api', dashboardRoutes); satırı yeterlidir.
+  // Eğer dashboardRoutes.ts dosyasındaki tanımlar sadece /stats, /activities gibi ise,
+  // o zaman app.use('/api/dashboard', dashboardRoutes); şeklinde kullanılmalıdır.
+  // Mevcut dashboardRoutes.ts dosyanızda rotalar /dashboard/stats şeklinde olduğu için
+  // app.use('/api', dashboardRoutes); kullanımı doğrudur.
+
+  /*
   app.get("/api/dashboard/stats", async (req: Request, res: Response) => {
-    try {
-      const accounts = await storage.getAccounts();
-      const quotes = await storage.getQuotes();
-      const projects = await storage.getProjects();
-      const tasks = await storage.getTasks();
-      const transactions = await storage.getTransactions();
-
-      const activeProjects = projects.filter(p => p.status === 'active').length;
-      const pendingQuotes = quotes.filter(q => q.status === 'pending').length;
-      const openTasks = tasks.filter(t => t.status !== 'completed').length;
-
-      const creditTotal = transactions
-        .filter(t => t.type === 'debit') // Genellikle 'debit' borç, 'credit' alacak anlamına gelir, kontrol edin
-        .reduce((sum, t) => sum + Number(t.amount), 0);
-
-      const debitTotal = transactions
-        .filter(t => t.type === 'credit')
-        .reduce((sum, t) => sum + Number(t.amount), 0);
-
-      const receivables = creditTotal - debitTotal; // Alacaklar
-
-      res.json({
-        activeProjects,
-        pendingQuotes,
-        openTasks,
-        receivables
-      });
-    } catch (error: any) {
-      console.error("Dashboard istatistikleri alınırken hata:", error);
-      res.status(500).json({ message: "Dashboard istatistikleri alınırken bir sunucu hatası oluştu." });
-    }
+    // ... (Bu kod artık dashboardRoutes.ts içinde)
   });
 
   app.get("/api/dashboard/activities", async (req: Request, res: Response) => {
-    try {
-      // Örnek aktiviteler (gerçek verilerle değiştirilmeli)
-      const quotesActivities = (await storage.getQuotes())
-        .map(q => ({
-          id: `quote-${q.id}`,
-          type: 'teklif', // Türkçe
-          title: 'Yeni teklif oluşturuldu',
-          description: `${q.subject} için yeni bir teklif oluşturuldu.`,
-          date: q.createdAt, // veya q.date
-          relatedId: q.id
-        }))
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 5); // Son 5 aktivite
-
-      // Diğer aktivite türlerini de buraya ekleyebilirsiniz (projeler, görevler vb.)
-      res.json(quotesActivities);
-    } catch (error: any) {
-      console.error("Aktiviteler alınırken hata:", error);
-      res.status(500).json({ message: "Aktiviteler alınırken bir sunucu hatası oluştu." });
-    }
+    // ... (Bu kod artık dashboardRoutes.ts içinde)
   });
 
   app.get("/api/dashboard/upcoming-tasks", async (req: Request, res: Response) => {
-    try {
-      const allTasks = await storage.getTasks();
-      const upcomingTasks = allTasks
-        .filter(task => task.status !== 'completed' && task.dueDate)
-        .sort((a, b) =>
-          a.dueDate && b.dueDate
-            ? new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-            : 0
-        )
-        .slice(0, 5);
-      res.json(upcomingTasks);
-    } catch (error: any) {
-      console.error("Yaklaşan görevler alınırken hata:", error);
-      res.status(500).json({ message: "Yaklaşan görevler alınırken bir sunucu hatası oluştu." });
-    }
+    // ... (Bu kod artık dashboardRoutes.ts içinde)
   });
 
   app.get("/api/dashboard/active-projects", async (req: Request, res: Response) => {
-    try {
-      const projects = await storage.getProjects();
-      const accounts = await storage.getAccounts(); // Hesap isimleri için
-      const activeProjects = projects
-        .filter(project => project.status === 'active')
-        .sort((a, b) => // Örnek sıralama, isteğe bağlı
-          a.endDate && b.endDate
-            ? new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
-            : 0
-        )
-        .slice(0, 5)
-        .map(project => {
-          const account = accounts.find(a => a.id === project.accountId);
-          return {
-            ...project,
-            accountName: account?.name || 'Bilinmeyen Hesap' // Türkçe
-          };
-        });
-      res.json(activeProjects);
-    } catch (error: any) {
-      console.error("Aktif projeler alınırken hata:", error);
-      res.status(500).json({ message: "Aktif projeler alınırken bir sunucu hatası oluştu." });
-    }
+    // ... (Bu kod artık dashboardRoutes.ts içinde)
   });
 
   app.get("/api/dashboard/recent-quotes", async (req: Request, res: Response) => {
-    try {
-      const quotes = await storage.getQuotes();
-      const accounts = await storage.getAccounts();
-      const recentQuotes = quotes
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 5)
-        .map(quote => {
-          const account = accounts.find(a => a.id === quote.accountId);
-          return {
-            ...quote,
-            accountName: account?.name || 'Bilinmeyen Hesap', // Türkçe
-            formattedDate: format(new Date(quote.date), 'd MMMM yyyy', { locale: tr }) // Daha tam bir tarih formatı
-          };
-        });
-      res.json(recentQuotes);
-    } catch (error: any) {
-      console.error("Son teklifler alınırken hata:", error);
-      res.status(500).json({ message: "Son teklifler alınırken bir sunucu hatası oluştu." });
-    }
+    // ... (Bu kod artık dashboardRoutes.ts içinde)
   });
+  */
+
 
   // Cari Hesap rotaları
   app.get("/api/accounts", async (req: Request, res: Response) => {
@@ -425,7 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // req.body.items tipini belirtmek için geçici bir tip tanımı
       type RequestBodyWithItems = z.infer<typeof insertQuoteSchema> & { items?: InsertQuoteItem[] };
       const parsedBody = insertQuoteSchema.extend({ items: z.array(insertQuoteItemSchema.omit({quoteId: true})).optional() }).parse(req.body) as RequestBodyWithItems;
-      
+
       const { items, ...quoteData } = parsedBody;
       const quote = await storage.createQuote(quoteData);
 
@@ -501,7 +415,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             updatedItemIds.push(item.id);
           } else { // Yeni kalem ekleniyor
             const newItem = await storage.createQuoteItem({ ...item, quoteId } as InsertQuoteItem); // Tip dönüşümü
-            updatedItemIds.push(newItem.id);
+            if (newItem && newItem.id) { // newItem ve newItem.id'nin varlığını kontrol et
+              updatedItemIds.push(newItem.id);
+            }
           }
         }
         // Silinmiş kalemleri bul ve sil
