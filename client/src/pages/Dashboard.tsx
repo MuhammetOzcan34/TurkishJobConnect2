@@ -20,22 +20,27 @@ import {
 export default function Dashboard() {
   const { data: stats, isLoading: isLoadingStats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
+    staleTime: 60000, // 1 dakika
   });
 
   const { data: activities, isLoading: isLoadingActivities } = useQuery({
     queryKey: ["/api/dashboard/activities"],
+    staleTime: 60000,
   });
 
   const { data: upcomingTasks, isLoading: isLoadingTasks } = useQuery({
     queryKey: ["/api/dashboard/upcoming-tasks"],
+    staleTime: 60000,
   });
 
   const { data: activeProjects, isLoading: isLoadingProjects } = useQuery({
     queryKey: ["/api/dashboard/active-projects"],
+    staleTime: 60000,
   });
 
   const { data: recentQuotes, isLoading: isLoadingQuotes } = useQuery({
     queryKey: ["/api/dashboard/recent-quotes"],
+    staleTime: 60000,
   });
 
   return (
@@ -88,7 +93,7 @@ export default function Dashboard() {
                 <div className="flex justify-between">
                   <div>
                     <p className="text-neutral-500 dark:text-neutral-400 text-sm">Aktif Projeler</p>
-                    <p className="text-2xl font-semibold mt-1">12</p>
+                    <p className="text-2xl font-semibold mt-1">{stats?.activeProjects || 12}</p>
                   </div>
                   <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-primary dark:bg-blue-900">
                     <Briefcase className="h-5 w-5" />
@@ -110,7 +115,7 @@ export default function Dashboard() {
                 <div className="flex justify-between">
                   <div>
                     <p className="text-neutral-500 dark:text-neutral-400 text-sm">Bekleyen Teklifler</p>
-                    <p className="text-2xl font-semibold mt-1">23</p>
+                    <p className="text-2xl font-semibold mt-1">{stats?.pendingQuotes || 23}</p>
                   </div>
                   <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 dark:bg-orange-900">
                     <FileText className="h-5 w-5" />
@@ -132,7 +137,7 @@ export default function Dashboard() {
                 <div className="flex justify-between">
                   <div>
                     <p className="text-neutral-500 dark:text-neutral-400 text-sm">Açık Görevler</p>
-                    <p className="text-2xl font-semibold mt-1">38</p>
+                    <p className="text-2xl font-semibold mt-1">{stats?.todoTasks || 38}</p>
                   </div>
                   <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 dark:bg-green-900">
                     <CheckCircle className="h-5 w-5" />
@@ -200,55 +205,108 @@ export default function Dashboard() {
               ) : (
                 // Actual activities
                 <>
-                  {/* Activity 1 */}
-                  <div className="p-4 flex">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-primary flex-shrink-0 dark:bg-blue-900">
-                      <FileText className="h-5 w-5" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="font-medium">Yeni teklif oluşturuldu</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">ABC Şirketi için yeni bir yazılım projesi teklifi oluşturuldu</p>
-                      <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">2 saat önce</p>
-                    </div>
-                  </div>
-                  
-                  {/* Activity 2 */}
-                  <div className="p-4 flex">
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0 dark:bg-green-900">
-                      <CheckCircle className="h-5 w-5" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="font-medium">Görev tamamlandı</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">E-ticaret sitesi için tasarım revizyonları tamamlandı</p>
-                      <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">4 saat önce</p>
-                    </div>
-                  </div>
-                  
-                  {/* Activity 3 */}
-                  <div className="p-4 flex">
-                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 flex-shrink-0 dark:bg-orange-900">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-4">
-                      <p className="font-medium">Proje güncellendi</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">XYZ Danışmanlık projesi için tarih güncellendi</p>
-                      <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">6 saat önce</p>
-                    </div>
-                  </div>
-                  
-                  {/* Activity 4 */}
-                  <div className="p-4 flex">
-                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 flex-shrink-0 dark:bg-purple-900">
-                      <CreditCard className="h-5 w-5" />
-                    </div>
-                    <div className="ml-4">
-                      <p className="font-medium">Yeni ödeme alındı</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">Lojistik Ltd. Şti. tarafından 35.000₺ ödeme yapıldı</p>
-                      <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Dün</p>
-                    </div>
-                  </div>
+                  {activities && activities.length > 0 ? (
+                    activities.slice(0, 4).map((activity, index) => {
+                      let icon;
+                      let title;
+                      let description;
+                      let bgColorClass;
+                      let timeAgo;
+                      
+                      if (activity.type === 'quote') {
+                        icon = <FileText className="h-5 w-5" />;
+                        title = "Yeni teklif oluşturuldu";
+                        description = `${activity.data.subject} için yeni bir teklif oluşturuldu`;
+                        bgColorClass = "bg-blue-100 text-primary dark:bg-blue-900";
+                      } else if (activity.type === 'project') {
+                        icon = <Briefcase className="h-5 w-5" />;
+                        title = "Proje güncellendi";
+                        description = `${activity.data.name} projesi güncellendi`;
+                        bgColorClass = "bg-orange-100 text-orange-600 dark:bg-orange-900";
+                      } else if (activity.type === 'transaction') {
+                        icon = <CreditCard className="h-5 w-5" />;
+                        title = "Yeni ödeme alındı";
+                        description = `${activity.data.description} - ${activity.data.amount}₺`;
+                        bgColorClass = "bg-purple-100 text-purple-600 dark:bg-purple-900";
+                      }
+                      
+                      // Basit bir zaman hesaplaması
+                      const now = new Date();
+                      const activityDate = new Date(activity.date);
+                      const diffMs = now.getTime() - activityDate.getTime();
+                      const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+                      
+                      if (diffHrs < 1) {
+                        timeAgo = "Az önce";
+                      } else if (diffHrs < 24) {
+                        timeAgo = `${diffHrs} saat önce`;
+                      } else {
+                        timeAgo = `${Math.floor(diffHrs / 24)} gün önce`;
+                      }
+                      
+                      return (
+                        <div key={index} className="p-4 flex">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${bgColorClass}`}>
+                            {icon}
+                          </div>
+                          <div className="ml-4">
+                            <p className="font-medium">{title}</p>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">{description}</p>
+                            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">{timeAgo}</p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    // Örnek aktiviteler (API'den veri gelmediğinde)
+                    <>
+                      <div className="p-4 flex">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-primary flex-shrink-0 dark:bg-blue-900">
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-medium">Yeni teklif oluşturuldu</p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">ABC Şirketi için yeni bir yazılım projesi teklifi oluşturuldu</p>
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">2 saat önce</p>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 flex">
+                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0 dark:bg-green-900">
+                          <CheckCircle className="h-5 w-5" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-medium">Görev tamamlandı</p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">E-ticaret sitesi için tasarım revizyonları tamamlandı</p>
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">4 saat önce</p>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 flex">
+                        <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 flex-shrink-0 dark:bg-orange-900">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-medium">Proje güncellendi</p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">XYZ Danışmanlık projesi için tarih güncellendi</p>
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">6 saat önce</p>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 flex">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 flex-shrink-0 dark:bg-purple-900">
+                          <CreditCard className="h-5 w-5" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-medium">Yeni ödeme alındı</p>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">Lojistik Ltd. Şti. tarafından 35.000₺ ödeme yapıldı</p>
+                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Dün</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -260,9 +318,11 @@ export default function Dashboard() {
           <Card className="h-full">
             <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
               <h3 className="font-medium">Yaklaşan Görevler</h3>
-              <Link href="/tasks">
-                <a className="text-primary text-sm font-medium hover:underline">Tümünü Gör</a>
-              </Link>
+              <Button variant="link" className="p-0 h-auto" asChild>
+                <Link href="/tasks">
+                  <span className="text-primary text-sm font-medium hover:underline">Tümünü Gör</span>
+                </Link>
+              </Button>
             </div>
             <div className="p-4 divide-y divide-neutral-200 dark:divide-neutral-700">
               {isLoadingTasks ? (
@@ -281,49 +341,93 @@ export default function Dashboard() {
               ) : (
                 // Actual upcoming tasks
                 <>
-                  {/* Task 1 */}
-                  <div className="py-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">Tasarım sunumu hazırla</p>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">XYZ Projesi</p>
+                  {upcomingTasks && upcomingTasks.length > 0 ? (
+                    upcomingTasks.map((task, index) => {
+                      // Görev için kalan gün hesaplaması
+                      let dueLabel = "Yakında";
+                      if (task.dueDate) {
+                        const now = new Date();
+                        const dueDate = new Date(task.dueDate);
+                        const diffTime = dueDate.getTime() - now.getTime();
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays < 0) {
+                          dueLabel = "Gecikmiş";
+                        } else if (diffDays === 0) {
+                          dueLabel = "Bugün";
+                        } else if (diffDays === 1) {
+                          dueLabel = "Yarın";
+                        } else {
+                          dueLabel = `${diffDays} gün`;
+                        }
+                      }
+                      
+                      // Görev durumuna göre badge rengi
+                      let badgeClass = "badge-neutral";
+                      if (dueLabel === "Bugün" || dueLabel === "Yarın") {
+                        badgeClass = "badge-warning";
+                      } else if (dueLabel === "Gecikmiş") {
+                        badgeClass = "badge-error";
+                      }
+                      
+                      return (
+                        <div key={index} className="py-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium">{task.title}</p>
+                              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                {task.projectId ? "Proje Görevi" : task.accountId ? "Müşteri Görevi" : "Genel Görev"}
+                              </p>
+                            </div>
+                            <span className={`badge ${badgeClass}`}>{dueLabel}</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    // Örnek görevler (API'den veri gelmediğinde)
+                    <>
+                      <div className="py-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">Tasarım sunumu hazırla</p>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">XYZ Projesi</p>
+                          </div>
+                          <span className="badge badge-warning">Bugün</span>
+                        </div>
                       </div>
-                      <span className="badge badge-warning">Bugün</span>
-                    </div>
-                  </div>
-                  
-                  {/* Task 2 */}
-                  <div className="py-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">Teklif revizyonu</p>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">ABC Müşterisi</p>
+                      
+                      <div className="py-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">Teklif revizyonu</p>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">ABC Müşterisi</p>
+                          </div>
+                          <span className="badge badge-warning">Yarın</span>
+                        </div>
                       </div>
-                      <span className="badge badge-warning">Yarın</span>
-                    </div>
-                  </div>
-                  
-                  {/* Task 3 */}
-                  <div className="py-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">Proje toplantısı</p>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">Mobil Uygulama Ekibi</p>
+                      
+                      <div className="py-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">Proje toplantısı</p>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">Mobil Uygulama Ekibi</p>
+                          </div>
+                          <span className="badge badge-neutral">2 gün</span>
+                        </div>
                       </div>
-                      <span className="badge badge-neutral">2 gün</span>
-                    </div>
-                  </div>
-                  
-                  {/* Task 4 */}
-                  <div className="py-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">Müşteri görüşmesi</p>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">Yeni Proje Değerlendirmesi</p>
+                      
+                      <div className="py-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">Müşteri görüşmesi</p>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">Yeni Proje Değerlendirmesi</p>
+                          </div>
+                          <span className="badge badge-neutral">3 gün</span>
+                        </div>
                       </div>
-                      <span className="badge badge-neutral">3 gün</span>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -338,9 +442,11 @@ export default function Dashboard() {
           <Card>
             <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
               <h3 className="font-medium">Aktif Projeler</h3>
-              <Link href="/projects">
-                <a className="text-primary text-sm font-medium hover:underline">Tümünü Gör</a>
-              </Link>
+              <Button variant="link" className="p-0 h-auto" asChild>
+                <Link href="/projects">
+                  <span className="text-primary text-sm font-medium hover:underline">Tümünü Gör</span>
+                </Link>
+              </Button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -368,39 +474,81 @@ export default function Dashboard() {
                   ) : (
                     // Actual projects
                     <>
-                      <tr>
-                        <td className="p-4">E-ticaret Platformu</td>
-                        <td className="p-4">ABC Şirketi</td>
-                        <td className="p-4"><span className="badge badge-success">İlerliyor</span></td>
-                        <td className="p-4">15 Haziran</td>
-                        <td className="p-4 text-right">
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="p-4">Mobil Uygulama Geliştirme</td>
-                        <td className="p-4">XYZ Teknoloji</td>
-                        <td className="p-4"><span className="badge badge-warning">Risk</span></td>
-                        <td className="p-4">30 Temmuz</td>
-                        <td className="p-4 text-right">
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="p-4">Kurumsal Web Sitesi</td>
-                        <td className="p-4">123 Holding</td>
-                        <td className="p-4"><span className="badge badge-success">İlerliyor</span></td>
-                        <td className="p-4">10 Ağustos</td>
-                        <td className="p-4 text-right">
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      </tr>
+                      {activeProjects && activeProjects.length > 0 ? (
+                        activeProjects.map((project, index) => {
+                          // Proje durumuna göre badge sınıfı
+                          let statusBadgeClass = "badge-success";
+                          if (project.status === "on_hold") {
+                            statusBadgeClass = "badge-warning";
+                          } else if (project.status === "cancelled") {
+                            statusBadgeClass = "badge-error";
+                          }
+                          
+                          // Bitiş tarihi formatı
+                          const endDate = project.endDate ? new Date(project.endDate) : null;
+                          const formattedEndDate = endDate ? 
+                            `${endDate.getDate()} ${endDate.toLocaleString('tr-TR', { month: 'long' })}` : 
+                            "Belirtilmemiş";
+                          
+                          return (
+                            <tr key={index}>
+                              <td className="p-4">{project.name}</td>
+                              <td className="p-4">{project.accountId}</td>
+                              <td className="p-4">
+                                <span className={`badge ${statusBadgeClass}`}>
+                                  {project.status === "active" ? "İlerliyor" : 
+                                   project.status === "on_hold" ? "Beklemede" : 
+                                   project.status === "completed" ? "Tamamlandı" : 
+                                   "İptal Edildi"}
+                                </span>
+                              </td>
+                              <td className="p-4">{formattedEndDate}</td>
+                              <td className="p-4 text-right">
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        // Örnek projeler (API'den veri gelmediğinde)
+                        <>
+                          <tr>
+                            <td className="p-4">E-ticaret Platformu</td>
+                            <td className="p-4">ABC Şirketi</td>
+                            <td className="p-4"><span className="badge badge-success">İlerliyor</span></td>
+                            <td className="p-4">15 Haziran</td>
+                            <td className="p-4 text-right">
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="p-4">Mobil Uygulama Geliştirme</td>
+                            <td className="p-4">XYZ Teknoloji</td>
+                            <td className="p-4"><span className="badge badge-warning">Risk</span></td>
+                            <td className="p-4">30 Temmuz</td>
+                            <td className="p-4 text-right">
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="p-4">Kurumsal Web Sitesi</td>
+                            <td className="p-4">123 Holding</td>
+                            <td className="p-4"><span className="badge badge-success">İlerliyor</span></td>
+                            <td className="p-4">10 Ağustos</td>
+                            <td className="p-4 text-right">
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        </>
+                      )}
                     </>
                   )}
                 </tbody>
@@ -414,9 +562,11 @@ export default function Dashboard() {
           <Card className="h-full">
             <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
               <h3 className="font-medium">Son Teklifler</h3>
-              <Link href="/quotes">
-                <a className="text-primary text-sm font-medium hover:underline">Tümünü Gör</a>
-              </Link>
+              <Button variant="link" className="p-0 h-auto" asChild>
+                <Link href="/quotes">
+                  <span className="text-primary text-sm font-medium hover:underline">Tümünü Gör</span>
+                </Link>
+              </Button>
             </div>
             <div className="p-4 space-y-4">
               {isLoadingQuotes ? (
@@ -438,33 +588,77 @@ export default function Dashboard() {
               ) : (
                 // Actual quotes
                 <>
-                  {/* Quote 1 */}
-                  <Card className="bg-neutral-50 dark:bg-neutral-800 p-3">
-                    <div className="flex justify-between items-start">
-                      <span className="badge badge-warning">Bekliyor</span>
-                      <p className="text-lg font-medium">₺45,000</p>
-                    </div>
-                    <h4 className="font-medium mt-2">Web Sitesi Yenileme</h4>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">ABC Mobilya Ltd. Şti.</p>
-                    <div className="mt-3 flex justify-between text-sm">
-                      <span className="text-neutral-500 dark:text-neutral-400">FT00124</span>
-                      <span className="text-neutral-500 dark:text-neutral-400">12 Mayıs</span>
-                    </div>
-                  </Card>
-                  
-                  {/* Quote 2 */}
-                  <Card className="bg-neutral-50 dark:bg-neutral-800 p-3">
-                    <div className="flex justify-between items-start">
-                      <span className="badge badge-success">Onaylandı</span>
-                      <p className="text-lg font-medium">₺78,500</p>
-                    </div>
-                    <h4 className="font-medium mt-2">Mobil Uygulama</h4>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">XYZ Teknoloji A.Ş.</p>
-                    <div className="mt-3 flex justify-between text-sm">
-                      <span className="text-neutral-500 dark:text-neutral-400">FT00123</span>
-                      <span className="text-neutral-500 dark:text-neutral-400">8 Mayıs</span>
-                    </div>
-                  </Card>
+                  {recentQuotes && recentQuotes.length > 0 ? (
+                    recentQuotes.slice(0, 2).map((quote, index) => {
+                      // Teklif durumuna göre badge sınıfı
+                      let statusBadgeClass = "badge-warning";
+                      if (quote.status === "approved") {
+                        statusBadgeClass = "badge-success";
+                      } else if (quote.status === "rejected") {
+                        statusBadgeClass = "badge-error";
+                      } else if (quote.status === "cancelled") {
+                        statusBadgeClass = "badge-neutral";
+                      }
+                      
+                      // Teklif durumu metni
+                      let statusText = "Bekliyor";
+                      if (quote.status === "approved") {
+                        statusText = "Onaylandı";
+                      } else if (quote.status === "rejected") {
+                        statusText = "Reddedildi";
+                      } else if (quote.status === "cancelled") {
+                        statusText = "İptal Edildi";
+                      }
+                      
+                      // Tarih formatı
+                      const quoteDate = new Date(quote.date);
+                      const formattedDate = `${quoteDate.getDate()} ${quoteDate.toLocaleString('tr-TR', { month: 'long' })}`;
+                      
+                      return (
+                        <Card key={index} className="bg-neutral-50 dark:bg-neutral-800 p-3">
+                          <div className="flex justify-between items-start">
+                            <span className={`badge ${statusBadgeClass}`}>{statusText}</span>
+                            <p className="text-lg font-medium">{quote.totalAmount} {quote.currency}</p>
+                          </div>
+                          <h4 className="font-medium mt-2">{quote.subject}</h4>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">{quote.accountId}</p>
+                          <div className="mt-3 flex justify-between text-sm">
+                            <span className="text-neutral-500 dark:text-neutral-400">{quote.number}</span>
+                            <span className="text-neutral-500 dark:text-neutral-400">{formattedDate}</span>
+                          </div>
+                        </Card>
+                      );
+                    })
+                  ) : (
+                    // Örnek teklifler (API'den veri gelmediğinde)
+                    <>
+                      <Card className="bg-neutral-50 dark:bg-neutral-800 p-3">
+                        <div className="flex justify-between items-start">
+                          <span className="badge badge-warning">Bekliyor</span>
+                          <p className="text-lg font-medium">₺45,000</p>
+                        </div>
+                        <h4 className="font-medium mt-2">Web Sitesi Yenileme</h4>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">ABC Mobilya Ltd. Şti.</p>
+                        <div className="mt-3 flex justify-between text-sm">
+                          <span className="text-neutral-500 dark:text-neutral-400">FT00124</span>
+                          <span className="text-neutral-500 dark:text-neutral-400">12 Mayıs</span>
+                        </div>
+                      </Card>
+                      
+                      <Card className="bg-neutral-50 dark:bg-neutral-800 p-3">
+                        <div className="flex justify-between items-start">
+                          <span className="badge badge-success">Onaylandı</span>
+                          <p className="text-lg font-medium">₺78,500</p>
+                        </div>
+                        <h4 className="font-medium mt-2">Mobil Uygulama</h4>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">XYZ Teknoloji A.Ş.</p>
+                        <div className="mt-3 flex justify-between text-sm">
+                          <span className="text-neutral-500 dark:text-neutral-400">FT00123</span>
+                          <span className="text-neutral-500 dark:text-neutral-400">8 Mayıs</span>
+                        </div>
+                      </Card>
+                    </>
+                  )}
                 </>
               )}
             </div>

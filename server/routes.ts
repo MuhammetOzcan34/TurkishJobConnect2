@@ -42,9 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard Rotalarını Express uygulamasına bağla
-  // dashboardRoutes.ts dosyasındaki rotalar '/dashboard/stats' gibi başlıyorsa,
-  // buradaki '/api' ön eki ile birleşerek '/api/dashboard/stats' adresini oluşturur.
-  app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api', dashboardRoutes);
   app.use('/api/users', userRoutes);
 
   // Diğer API Rotaları

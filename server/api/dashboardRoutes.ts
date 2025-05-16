@@ -21,7 +21,7 @@ import { storage } from '../storage';
 const router = Router();
 
 // Dashboard stats endpoint
-router.get('/stats', async (req: Request, res: Response) => {
+router.get('/dashboard/stats', async (req: Request, res: Response) => {
   try {
     // Temel istatistikleri getir
     const accounts = await storage.getAccounts();
@@ -47,7 +47,7 @@ router.get('/stats', async (req: Request, res: Response) => {
 });
 
 // Recent activities endpoint
-router.get('/activities', async (req: Request, res: Response) => {
+router.get('/dashboard/activities', async (req: Request, res: Response) => {
   try {
     // Son aktiviteleri getir (son eklenen işlemler, projeler, teklifler)
     const recentTransactions = await storage.getTransactions();
@@ -83,7 +83,7 @@ router.get('/activities', async (req: Request, res: Response) => {
 });
 
 // Upcoming tasks endpoint
-router.get('/upcoming-tasks', async (req: Request, res: Response) => {
+router.get('/dashboard/upcoming-tasks', async (req: Request, res: Response) => {
   try {
     const tasks = await storage.getTasks();
     
@@ -105,7 +105,7 @@ router.get('/upcoming-tasks', async (req: Request, res: Response) => {
 });
 
 // Recent quotes endpoint
-router.get('/recent-quotes', async (req: Request, res: Response) => {
+router.get('/dashboard/recent-quotes', async (req: Request, res: Response) => {
   try {
     const quotes = await storage.getQuotes();
     
@@ -122,7 +122,7 @@ router.get('/recent-quotes', async (req: Request, res: Response) => {
 });
 
 // Active projects endpoint
-router.get('/active-projects', async (req: Request, res: Response) => {
+router.get('/dashboard/active-projects', async (req: Request, res: Response) => {
   try {
     const projects = await storage.getProjects();
     
