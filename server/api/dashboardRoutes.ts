@@ -1,145 +1,142 @@
-import { Router, Request, Response } from 'express';
+import type { Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { z } from "zod";
+import dashboardRoutes from './api/dashboardRoutes';
+import userRoutes from './api/userRoutes';
+
+export function registerRoutes(app: Express): Server {
+  // API rotalarını kaydet
+  app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/users', userRoutes);
+  
+  // Diğer rotalar...
+  
+  // HTTP sunucusunu oluştur
+  const server = createServer(app);
+  return server;
+}import { Router, Request, Response } from 'express';
+import { storage } from '../storage';
 
 const router = Router();
 
 // Dashboard stats endpoint
-router.get('/dashboard/stats', (req: Request, res: Response) => {
-  // Örnek veri
-  const stats = {
-    activeProjects: 12,
-    pendingQuotes: 23,
-    openTasks: 38,
-    totalReceivables: 128500
-  };
-  
-  res.json(stats);
+router.get('/stats', async (req: Request, res: Response) => {
+  try {
+    // Temel istatistikleri getir
+    const accounts = await storage.getAccounts();
+    const projects = await storage.getProjects();
+    const quotes = await storage.getQuotes();
+    const tasks = await storage.getTasks();
+    
+    const stats = {
+      totalAccounts: accounts.length,
+      totalProjects: projects.length,
+      totalQuotes: quotes.length,
+      totalTasks: tasks.length,
+      activeProjects: projects.filter(p => p.status === 'active').length,
+      pendingQuotes: quotes.filter(q => q.status === 'pending').length,
+      todoTasks: tasks.filter(t => t.status === 'todo').length
+    };
+    
+    res.json(stats);
+  } catch (error) {
+    console.error('Dashboard stats error:', error);
+    res.status(500).json({ error: 'İstatistikler alınırken bir hata oluştu' });
+  }
 });
 
-// Dashboard activities endpoint
-router.get('/dashboard/activities', (req: Request, res: Response) => {
-  // Örnek veri
-  const activities = [
-    {
-      id: 1,
-      type: 'quote',
-      title: 'Yeni teklif oluşturuldu',
-      description: 'ABC Şirketi için yeni bir yazılım projesi teklifi oluşturuldu',
-      time: '2 saat önce'
-    },
-    {
-      id: 2,
-      type: 'task',
-      title: 'Görev tamamlandı',
-      description: 'E-ticaret sitesi için tasarım revizyonları tamamlandı',
-      time: '4 saat önce'
-    },
-    {
-      id: 3,
-      type: 'project',
-      title: 'Proje güncellendi',
-      description: 'XYZ Danışmanlık projesi için tarih güncellendi',
-      time: '6 saat önce'
-    },
-    {
-      id: 4,
-      type: 'payment',
-      title: 'Yeni ödeme alındı',
-      description: 'Lojistik Ltd. Şti. tarafından 35.000₺ ödeme yapıldı',
-      time: 'Dün'
-    }
-  ];
-  
-  res.json(activities);
+// Recent activities endpoint
+router.get('/activities', async (req: Request, res: Response) => {
+  try {
+    // Son aktiviteleri getir (son eklenen işlemler, projeler, teklifler)
+    const recentTransactions = await storage.getTransactions();
+    const recentProjects = await storage.getProjects();
+    const recentQuotes = await storage.getQuotes();
+    
+    // Son 10 aktiviteyi birleştir ve tarihe göre sırala
+    const activities = [
+      ...recentTransactions.map(t => ({ 
+        type: 'transaction', 
+        date: t.createdAt, 
+        data: t 
+      })),
+      ...recentProjects.map(p => ({ 
+        type: 'project', 
+        date: p.createdAt, 
+        data: p 
+      })),
+      ...recentQuotes.map(q => ({ 
+        type: 'quote', 
+        date: q.createdAt, 
+        data: q 
+      }))
+    ]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 10);
+    
+    res.json(activities);
+  } catch (error) {
+    console.error('Dashboard activities error:', error);
+    res.status(500).json({ error: 'Aktiviteler alınırken bir hata oluştu' });
+  }
 });
 
-// Dashboard upcoming tasks endpoint
-router.get('/dashboard/upcoming-tasks', (req: Request, res: Response) => {
-  // Örnek veri
-  const upcomingTasks = [
-    {
-      id: 1,
-      title: 'Tasarım sunumu hazırla',
-      project: 'XYZ Projesi',
-      dueDate: 'Bugün'
-    },
-    {
-      id: 2,
-      title: 'Teklif revizyonu',
-      project: 'ABC Müşterisi',
-      dueDate: 'Yarın'
-    },
-    {
-      id: 3,
-      title: 'Proje toplantısı',
-      project: 'Mobil Uygulama Ekibi',
-      dueDate: '2 gün'
-    },
-    {
-      id: 4,
-      title: 'Müşteri görüşmesi',
-      project: 'Yeni Proje Değerlendirmesi',
-      dueDate: '3 gün'
-    }
-  ];
-  
-  res.json(upcomingTasks);
+// Upcoming tasks endpoint
+router.get('/upcoming-tasks', async (req: Request, res: Response) => {
+  try {
+    const tasks = await storage.getTasks();
+    
+    // Tamamlanmamış ve yaklaşan görevleri getir
+    const upcomingTasks = tasks
+      .filter(task => task.status !== 'completed')
+      .sort((a, b) => {
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      })
+      .slice(0, 5);
+    
+    res.json(upcomingTasks);
+  } catch (error) {
+    console.error('Upcoming tasks error:', error);
+    res.status(500).json({ error: 'Yaklaşan görevler alınırken bir hata oluştu' });
+  }
 });
 
-// Dashboard active projects endpoint
-router.get('/dashboard/active-projects', (req: Request, res: Response) => {
-  // Örnek veri
-  const activeProjects = [
-    {
-      id: 1,
-      name: 'E-ticaret Platformu',
-      company: 'ABC Şirketi',
-      status: 'İlerliyor',
-      endDate: '15 Haziran'
-    },
-    {
-      id: 2,
-      name: 'Mobil Uygulama Geliştirme',
-      company: 'XYZ Teknoloji',
-      status: 'Risk',
-      endDate: '30 Temmuz'
-    },
-    {
-      id: 3,
-      name: 'Kurumsal Web Sitesi',
-      company: '123 Holding',
-      status: 'İlerliyor',
-      endDate: '10 Ağustos'
-    }
-  ];
-  
-  res.json(activeProjects);
+// Recent quotes endpoint
+router.get('/recent-quotes', async (req: Request, res: Response) => {
+  try {
+    const quotes = await storage.getQuotes();
+    
+    // Son 5 teklifi getir
+    const recentQuotes = quotes
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
+    
+    res.json(recentQuotes);
+  } catch (error) {
+    console.error('Recent quotes error:', error);
+    res.status(500).json({ error: 'Son teklifler alınırken bir hata oluştu' });
+  }
 });
 
-// Dashboard recent quotes endpoint
-router.get('/dashboard/recent-quotes', (req: Request, res: Response) => {
-  // Örnek veri
-  const recentQuotes = [
-    {
-      id: 1,
-      status: 'Bekliyor',
-      amount: 45000,
-      title: 'Web Sitesi Yenileme',
-      company: 'ABC Mobilya Ltd. Şti.',
-      number: 'FT00124',
-      date: '12 Mayıs'
-    },
-    {
-      id: 2,
-      status: 'Onaylandı',
-      amount: 78500,
-      title: 'Mobil Uygulama',
-      company: 'XYZ Teknoloji A.Ş.',
-      number: 'FT00123',
-      date: '8 Mayıs'
-    }
-  ];
-  
-  res.json(recentQuotes);
+// Active projects endpoint
+router.get('/active-projects', async (req: Request, res: Response) => {
+  try {
+    const projects = await storage.getProjects();
+    
+    // Aktif projeleri getir
+    const activeProjects = projects
+      .filter(project => project.status === 'active')
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 5);
+    
+    res.json(activeProjects);
+  } catch (error) {
+    console.error('Active projects error:', error);
+    res.status(500).json({ error: 'Aktif projeler alınırken bir hata oluştu' });
+  }
 });
 
 export default router;

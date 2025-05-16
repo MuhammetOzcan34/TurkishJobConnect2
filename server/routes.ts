@@ -28,6 +28,7 @@ import bcrypt from 'bcryptjs'; // Şifreleme için bcryptjs'i import edin
 // Dashboard rotalarını içeren dosyayı import edin.
 // Bu dosyanın (./api/dashboardRoutes) var olduğundan ve Express Router export ettiğinden emin olun.
 import dashboardRoutes from './api/dashboardRoutes';
+import userRoutes from './api/userRoutes';
 
 // Tüm API rotalarını Express uygulamasına kaydeden asenkron fonksiyon
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -43,7 +44,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard Rotalarını Express uygulamasına bağla
   // dashboardRoutes.ts dosyasındaki rotalar '/dashboard/stats' gibi başlıyorsa,
   // buradaki '/api' ön eki ile birleşerek '/api/dashboard/stats' adresini oluşturur.
-  app.use('/api', dashboardRoutes);
+  app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/users', userRoutes);
 
   // Diğer API Rotaları
 
