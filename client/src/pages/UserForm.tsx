@@ -60,8 +60,15 @@ export default function UserForm() {
       // Yanıt başarılı değilse hata fırlatma
       if (!response.ok) {
         // Sunucudan gelen hata mesajını yakalamaya çalışma
-        const errorData = await response.json().catch(() => ({ message: "Bilinmeyen sunucu hatası" }));
-        throw new Error(errorData.message || "Kullanıcı oluşturulamadı"); // Kullanıcıya gösterilecek hata mesajı
+        let errorMessage = "Kullanıcı oluşturulamadı"; // Varsayılan hata mesajı
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          // JSON ayrıştırma başarısız olursa, yanıtı metin olarak okumayı dene
+          errorMessage = (await response.text()) || "Bilinmeyen sunucu hatası";
+        }
+        throw new Error(errorMessage); // Kullanıcıya gösterilecek hata mesajı
       }
       
       // Başarılı yanıtı JSON olarak döndürme
