@@ -100,9 +100,12 @@ export default function UserForm() {
           variant="ghost"
           className="mr-2"
           onClick={() => navigate("/users")}
+          disabled={createMutation.isPending} // Also disable back button during mutation
         >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          <span>Geri</span> {/* Kullanıcıya gösterilen metin */}
+          <span className="inline-flex items-center">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            <span>Geri</span> {/* Kullanıcıya gösterilen metin */}
+          </span>
         </Button>
         <h2 className="text-2xl font-semibold">Yeni Kullanıcı</h2> {/* Kullanıcıya gösterilen başlık */}
       </div>
@@ -227,12 +230,12 @@ export default function UserForm() {
                   disabled={createMutation.isPending} // İşlem devam ederken pasif yap
                 >
                   {createMutation.isPending ? ( // İşlem devam ediyorsa yüklenme göstergesi
-                    <>
+                    <span className="inline-flex items-center">
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Oluşturuluyor... {/* Kullanıcıya gösterilen metin */}
-                    </>
+                    </span>
                   ) : (
-                    "Oluştur" // Kullanıcıya gösterilen metin
+                    <span>Oluştur</span> // Kullanıcıya gösterilen metin
                   )}
                 </Button>
               </div>
