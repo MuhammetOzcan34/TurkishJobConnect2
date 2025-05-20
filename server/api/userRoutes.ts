@@ -6,7 +6,6 @@ import { z } from "zod";
 
 const router = Router();
 
-// Kullanıcı oluşturma (POST /api/users)
 router.post("/users", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validatedData = insertUserSchema.parse(req.body);
@@ -24,7 +23,6 @@ router.post("/users", async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
-// Kullanıcıları listele (GET /api/users)
 router.get("/users", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const users = await storage.getUsers();
