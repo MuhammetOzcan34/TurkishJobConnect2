@@ -107,7 +107,7 @@ export default function UserForm() {
                     <FormItem>
                       <FormLabel>Kullanıcı Adı</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Kullanıcı adını girin" />
+                        <Input {...field} placeholder="Kullanıcı adı girin" autoComplete="username" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
