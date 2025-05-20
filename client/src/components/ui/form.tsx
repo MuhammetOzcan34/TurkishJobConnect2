@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
-// DÜZELTME: Form bileşeni artık children olarak React.ReactNode alıyor ve FormProvider ile sarmalıyor
+// Form bileşeni artık children olarak React.ReactNode alıyor ve FormProvider ile sarmalıyor
 export function Form({ children, ...props }: { children: React.ReactNode }) {
   return <FormProvider {...props}>{children}</FormProvider>
 }
