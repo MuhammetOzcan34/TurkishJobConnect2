@@ -1,20 +1,30 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
+
 const router = Router();
 
-router.get('/dashboard/stats', (req: Request, res: Response) => {
-  res.json({ totalUsers: 10, totalProjects: 5 });
+// Dashboard istatistikleri
+router.get("/stats", async (req: Request, res: Response) => {
+  res.json({ stats: {} });
 });
-router.get('/dashboard/upcoming-tasks', (req: Request, res: Response) => {
-  res.json([{ id: 1, title: "Yaklaşan Görev 1" }]);
+
+// Aktif projeler
+router.get("/active-projects", async (req: Request, res: Response) => {
+  res.json({ projects: [] });
 });
-router.get('/dashboard/recent-quotes', (req: Request, res: Response) => {
-  res.json([{ id: 1, quote: "Son Teklif 1" }]);
+
+// Yaklaşan görevler
+router.get("/upcoming-tasks", async (req: Request, res: Response) => {
+  res.json({ tasks: [] });
 });
-router.get('/dashboard/activities', (req: Request, res: Response) => {
-  res.json([{ id: 1, activity: "Aktivite 1" }]);
+
+// Son teklifler
+router.get("/recent-quotes", async (req: Request, res: Response) => {
+  res.json({ quotes: [] });
 });
-router.get('/dashboard/active-projects', (req: Request, res: Response) => {
-  res.json([{ id: 1, name: "Aktif Proje 1" }]);
+
+// Son aktiviteler
+router.get("/activities", async (req: Request, res: Response) => {
+  res.json({ activities: [] });
 });
 
 export default router;
