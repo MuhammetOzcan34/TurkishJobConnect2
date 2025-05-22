@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useLocation, useSearch } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -184,7 +183,7 @@ export default function QuoteForm() {
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
       navigate("/quotes");
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Hata",
         description: "Teklif oluşturulurken bir hata oluştu.",
@@ -207,7 +206,7 @@ export default function QuoteForm() {
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
       navigate(`/quotes/${id}`);
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Hata",
         description: "Teklif güncellenirken bir hata oluştu.",
@@ -219,23 +218,17 @@ export default function QuoteForm() {
   const calculateLineTotal = (index: number) => {
     const values = form.getValues();
     const item = values.items[index];
-    
     if (!item) return;
-    
     const quantity = Number(item.quantity) || 0;
     const unitPrice = Number(item.unitPrice) || 0;
     const discount = Number(item.discount) || 0;
     const taxRate = Number(item.taxRate) || 0;
-    
     const subtotal = quantity * unitPrice;
     const discountAmount = subtotal * (discount / 100);
     const netAmount = subtotal - discountAmount;
     const taxAmount = netAmount * (taxRate / 100);
     const lineTotal = netAmount + taxAmount;
-    
     form.setValue(`items.${index}.lineTotal`, lineTotal);
-    
-    // Recalculate total
     calculateTotal();
   };
 
@@ -246,17 +239,11 @@ export default function QuoteForm() {
   };
 
   function onSubmit(data: QuoteFormValues) {
-    // Ensure all line totals are calculated
     data.items.forEach((_, index) => {
       calculateLineTotal(index);
     });
-    
-    // Calculate final total
     calculateTotal();
-    
-    // Get the updated values
     const updatedData = form.getValues();
-    
     if (isEditing) {
       updateMutation.mutate(updatedData);
     } else {
@@ -288,7 +275,6 @@ export default function QuoteForm() {
           {isEditing ? "Teklif Düzenle" : "Yeni Teklif"}
         </h2>
       </div>
-      
       <Card>
         <CardHeader>
           <CardTitle>
@@ -322,7 +308,7 @@ export default function QuoteForm() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
@@ -352,7 +338,6 @@ export default function QuoteForm() {
                     </FormItem>
                   )}
                 />
-                
                 <FormField
                   control={form.control}
                   name="subject"
@@ -366,7 +351,6 @@ export default function QuoteForm() {
                     </FormItem>
                   )}
                 />
-                
                 <FormField
                   control={form.control}
                   name="date"
@@ -402,7 +386,6 @@ export default function QuoteForm() {
                     </FormItem>
                   )}
                 />
-                
                 <FormField
                   control={form.control}
                   name="validUntil"
@@ -438,7 +421,6 @@ export default function QuoteForm() {
                     </FormItem>
                   )}
                 />
-                
                 <FormField
                   control={form.control}
                   name="contactPerson"
@@ -452,7 +434,6 @@ export default function QuoteForm() {
                     </FormItem>
                   )}
                 />
-                
                 <FormField
                   control={form.control}
                   name="paymentTerms"
@@ -466,7 +447,6 @@ export default function QuoteForm() {
                     </FormItem>
                   )}
                 />
-                
                 <FormField
                   control={form.control}
                   name="currency"
@@ -494,7 +474,6 @@ export default function QuoteForm() {
                   )}
                 />
               </div>
-              
               <CardHeader className="px-0 pt-6">
                 <CardTitle className="flex justify-between items-center">
                   <span>Kalemler</span>
@@ -516,7 +495,6 @@ export default function QuoteForm() {
                   </Button>
                 </CardTitle>
               </CardHeader>
-              
               <div className="space-y-4">
                 {fields.map((field, index) => (
                   <Card key={field.id} className="overflow-hidden">
@@ -534,7 +512,6 @@ export default function QuoteForm() {
                           </Button>
                         )}
                       </div>
-                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -549,7 +526,6 @@ export default function QuoteForm() {
                             </FormItem>
                           )}
                         />
-                        
                         <div className="flex space-x-2">
                           <FormField
                             control={form.control}
@@ -572,7 +548,6 @@ export default function QuoteForm() {
                               </FormItem>
                             )}
                           />
-                          
                           <FormField
                             control={form.control}
                             name={`items.${index}.unit`}
@@ -602,7 +577,6 @@ export default function QuoteForm() {
                             )}
                           />
                         </div>
-                        
                         <FormField
                           control={form.control}
                           name={`items.${index}.unitPrice`}
@@ -624,7 +598,6 @@ export default function QuoteForm() {
                             </FormItem>
                           )}
                         />
-                        
                         <div className="flex space-x-2">
                           <FormField
                             control={form.control}
@@ -647,7 +620,6 @@ export default function QuoteForm() {
                               </FormItem>
                             )}
                           />
-                          
                           <FormField
                             control={form.control}
                             name={`items.${index}.taxRate`}
@@ -670,7 +642,6 @@ export default function QuoteForm() {
                             )}
                           />
                         </div>
-                        
                         <FormField
                           control={form.control}
                           name={`items.${index}.lineTotal`}
@@ -704,7 +675,6 @@ export default function QuoteForm() {
                   </Card>
                 ))}
               </div>
-              
               <div className="flex justify-end">
                 <Card className="w-full md:w-1/3">
                   <CardContent className="p-4">
@@ -736,7 +706,6 @@ export default function QuoteForm() {
                   </CardContent>
                 </Card>
               </div>
-              
               <FormField
                 control={form.control}
                 name="notes"
@@ -754,7 +723,6 @@ export default function QuoteForm() {
                   </FormItem>
                 )}
               />
-              
               <div className="flex justify-end space-x-2">
                 <Button
                   type="button"

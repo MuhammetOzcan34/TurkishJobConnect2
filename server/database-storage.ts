@@ -7,14 +7,13 @@ import {
   projects, Project, InsertProject,
   tasks, Task, InsertTask,
 } from "@shared/schema";
-import { getDb } from "./db"; // Doğrudan 'db' yerine 'getDb' fonksiyonunu import et
-import { eq, and } from "drizzle-orm";
+import { getDb } from "./db";
+import { eq } from "drizzle-orm";
 import { IStorage } from "./storage";
 
 export class DatabaseStorage implements IStorage {
-  // Veritabanı örneğini almak için yardımcı bir fonksiyon
   private getDbInstance() {
-    return getDb(); // Her veritabanı işlemi öncesinde db örneğini al
+    return getDb();
   }
 
   // Kullanıcı işlemleri
@@ -22,19 +21,14 @@ export class DatabaseStorage implements IStorage {
     return await this.getDbInstance().select().from(users);
   }
 
-  async getUser(id: number): Promise<User | undefined> {
+  async getUserById(id: number): Promise<User | undefined> {
     const [user] = await this.getDbInstance().select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await this.getDbInstance().select().from(users).where(eq(users.username, username));
-    return user;
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await this.getDbInstance().insert(users).values(insertUser).returning();
-    return user;
+  async createUser(user: Omit<User, "id" | "createdAt" | "updatedAt">): Promise<User> {
+    const [created] = await this.getDbInstance().insert(users).values(user).returning();
+    return created;
   }
 
   // Cari Hesap işlemleri
@@ -47,25 +41,23 @@ export class DatabaseStorage implements IStorage {
     return account;
   }
 
-  async createAccount(insertAccount: InsertAccount): Promise<Account> {
-    const [account] = await this.getDbInstance().insert(accounts).values(insertAccount).returning();
-    return account;
+  async createAccount(account: InsertAccount): Promise<Account> {
+    const [created] = await this.getDbInstance().insert(accounts).values(account).returning();
+    return created;
   }
 
   async updateAccount(id: number, accountData: Partial<InsertAccount>): Promise<Account | undefined> {
-    const [updatedAccount] = await this.getDbInstance()
+    const [updated] = await this.getDbInstance()
       .update(accounts)
       .set(accountData)
       .where(eq(accounts.id, id))
       .returning();
-    return updatedAccount;
+    return updated;
   }
 
   async deleteAccount(id: number): Promise<boolean> {
-    // Drizzle-ORM neon-http adaptörü genellikle etkilenen satır sayısını döndürmez.
-    // Başarılı olursa hata fırlatmayacaktır.
     await this.getDbInstance().delete(accounts).where(eq(accounts.id, id));
-    return true; // Hata yoksa başarılı kabul et
+    return true;
   }
 
   // Hesap Hareketi işlemleri
@@ -80,17 +72,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(transactions.accountId, accountId));
   }
 
-  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
-    const [transaction] = await this.getDbInstance()
-      .insert(transactions)
-      .values(insertTransaction)
-      .returning();
-    return transaction;
+  async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
+    const [created] = await this.getDbInstance().insert(transactions).values(transaction).returning();
+    return created;
   }
 
   // Teklif işlemleri
-  async getQuotes(): Promise<Quote[]> {
-    return await this.getDbInstance().select().from(quotes);
+  async getQuote(id: number): Promise<Quote & { account?: Account } | undefined> {
+    const db = this.getDbInstance();
+    const [quote] = await db.select().from(quotes).where(eq(quotes.id, id));
+    if (!quote) return undefined;
+    const [account] = await db.select().from(accounts).where(eq(accounts.id, quote.accountId));
+    return { ...quote, account };
   }
 
   async getQuotesByAccount(accountId: number): Promise<Quote[]> {
@@ -100,23 +93,22 @@ export class DatabaseStorage implements IStorage {
       .where(eq(quotes.accountId, accountId));
   }
 
-  async getQuote(id: number): Promise<Quote | undefined> {
-    const [quote] = await this.getDbInstance().select().from(quotes).where(eq(quotes.id, id));
-    return quote;
+  async getQuotes(): Promise<Quote[]> {
+    return await this.getDbInstance().select().from(quotes);
   }
 
-  async createQuote(insertQuote: InsertQuote): Promise<Quote> {
-    const [quote] = await this.getDbInstance().insert(quotes).values(insertQuote).returning();
-    return quote;
+  async createQuote(quote: InsertQuote): Promise<Quote> {
+    const [created] = await this.getDbInstance().insert(quotes).values(quote).returning();
+    return created;
   }
 
   async updateQuote(id: number, quoteData: Partial<InsertQuote>): Promise<Quote | undefined> {
-    const [updatedQuote] = await this.getDbInstance()
+    const [updated] = await this.getDbInstance()
       .update(quotes)
       .set(quoteData)
       .where(eq(quotes.id, id))
       .returning();
-    return updatedQuote;
+    return updated;
   }
 
   async deleteQuote(id: number): Promise<boolean> {
@@ -132,21 +124,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(quoteItems.quoteId, quoteId));
   }
 
-  async createQuoteItem(insertQuoteItem: InsertQuoteItem): Promise<QuoteItem> {
-    const [quoteItem] = await this.getDbInstance()
-      .insert(quoteItems)
-      .values(insertQuoteItem)
-      .returning();
-    return quoteItem;
+  async createQuoteItem(item: InsertQuoteItem): Promise<QuoteItem> {
+    const [created] = await this.getDbInstance().insert(quoteItems).values(item).returning();
+    return created;
   }
 
-  async updateQuoteItem(id: number, quoteItemData: Partial<InsertQuoteItem>): Promise<QuoteItem | undefined> {
-    const [updatedQuoteItem] = await this.getDbInstance()
+  async updateQuoteItem(id: number, itemData: Partial<InsertQuoteItem>): Promise<QuoteItem | undefined> {
+    const [updated] = await this.getDbInstance()
       .update(quoteItems)
-      .set(quoteItemData)
+      .set(itemData)
       .where(eq(quoteItems.id, id))
       .returning();
-    return updatedQuoteItem;
+    return updated;
   }
 
   async deleteQuoteItem(id: number): Promise<boolean> {
@@ -174,21 +163,18 @@ export class DatabaseStorage implements IStorage {
     return project;
   }
 
-  async createProject(insertProject: InsertProject): Promise<Project> {
-    const [project] = await this.getDbInstance()
-      .insert(projects)
-      .values(insertProject)
-      .returning();
-    return project;
+  async createProject(project: InsertProject): Promise<Project> {
+    const [created] = await this.getDbInstance().insert(projects).values(project).returning();
+    return created;
   }
 
   async updateProject(id: number, projectData: Partial<InsertProject>): Promise<Project | undefined> {
-    const [updatedProject] = await this.getDbInstance()
+    const [updated] = await this.getDbInstance()
       .update(projects)
       .set(projectData)
       .where(eq(projects.id, id))
       .returning();
-    return updatedProject;
+    return updated;
   }
 
   async deleteProject(id: number): Promise<boolean> {
@@ -220,27 +206,27 @@ export class DatabaseStorage implements IStorage {
     return task;
   }
 
-  async createTask(insertTask: InsertTask): Promise<Task> {
-    const [task] = await this.getDbInstance().insert(tasks).values(insertTask).returning();
-    return task;
+  async createTask(task: InsertTask): Promise<Task> {
+    const [created] = await this.getDbInstance().insert(tasks).values(task).returning();
+    return created;
   }
 
   async updateTask(id: number, taskData: Partial<InsertTask>): Promise<Task | undefined> {
-    const [updatedTask] = await this.getDbInstance()
+    const [updated] = await this.getDbInstance()
       .update(tasks)
       .set(taskData)
       .where(eq(tasks.id, id))
       .returning();
-    return updatedTask;
+    return updated;
   }
 
   async updateTaskStatus(id: number, status: 'todo' | 'in-progress' | 'completed'): Promise<Task | undefined> {
-    const [updatedTask] = await this.getDbInstance()
+    const [updated] = await this.getDbInstance()
       .update(tasks)
       .set({ status })
       .where(eq(tasks.id, id))
       .returning();
-    return updatedTask;
+    return updated;
   }
 
   async deleteTask(id: number): Promise<boolean> {

@@ -1,54 +1,67 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getStatusClass } from "@/lib/utils";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { 
-  Eye, 
-  Filter, 
-  Plus, 
-  ArrowRight, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  AlertCircle 
+import {
+  Eye,
+  Filter,
+  Plus,
+  ArrowRight,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
 } from "lucide-react";
+
+type Project = {
+  id: number;
+  number: string;
+  name: string;
+  accountName: string;
+  formattedStartDate: string;
+  formattedEndDate?: string;
+  status: string;
+  description?: string;
+};
 
 export default function Projects() {
   const [, navigate] = useLocation();
   const search = useSearch();
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
-  
-  const { data: projects, isLoading } = useQuery({
+
+  const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
 
   const urlSearchQuery = new URLSearchParams(search).get("q") || "";
 
-  const filteredProjects = projects?.filter((project: any) => {
+  const filteredProjects = projects.filter((project) => {
     if (!urlSearchQuery) return true;
     const searchTerm = urlSearchQuery.toLowerCase();
-    return project.name.toLowerCase().includes(searchTerm) ||
-           project.accountName.toLowerCase().includes(searchTerm) ||
-           (project.number && project.number.toLowerCase().includes(searchTerm));
-  }
-) || [];
+    return (
+      project.name.toLowerCase().includes(searchTerm) ||
+      project.accountName.toLowerCase().includes(searchTerm) ||
+      (project.number && project.number.toLowerCase().includes(searchTerm))
+    );
+  });
 
-  const filteredByStatus = activeTab === "all" 
-    ? filteredProjects
-    : filteredProjects.filter((project: any) => project.status === activeTab);
+  const filteredByStatus =
+    activeTab === "all"
+      ? filteredProjects
+      : filteredProjects.filter((project) => project.status === activeTab);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -95,7 +108,7 @@ export default function Projects() {
           </Button>
         </div>
       </div>
-      
+
       <div className="flex justify-between items-center mb-4">
         <Tabs defaultValue="all" onValueChange={setActiveTab}>
           <TabsList>
@@ -105,7 +118,7 @@ export default function Projects() {
             <TabsTrigger value="on_hold">Beklemede</TabsTrigger>
           </TabsList>
         </Tabs>
-        
+
         <div className="flex space-x-2">
           <Button
             variant={viewMode === "table" ? "default" : "outline"}
@@ -123,7 +136,7 @@ export default function Projects() {
           </Button>
         </div>
       </div>
-      
+
       {viewMode === "table" ? (
         <Card>
           <CardContent className="p-0">
@@ -141,18 +154,33 @@ export default function Projects() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  // Loading skeletons
-                  Array(5).fill(0).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-9 w-20 ml-auto" /></TableCell>
-                    </TableRow>
-                  ))
+                  Array(5)
+                    .fill(0)
+                    .map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <Skeleton className="h-5 w-20" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-40" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-32" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-24" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Skeleton className="h-9 w-20 ml-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ))
                 ) : filteredByStatus.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
@@ -162,7 +190,7 @@ export default function Projects() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredByStatus.map((project: any) => (
+                  filteredByStatus.map((project) => (
                     <TableRow key={project.id}>
                       <TableCell className="font-medium">{project.number}</TableCell>
                       <TableCell>{project.name}</TableCell>
@@ -178,8 +206,8 @@ export default function Projects() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => navigate(`/projects/${project.id}`)}
                         >
@@ -197,29 +225,30 @@ export default function Projects() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading ? (
-            // Loading skeletons
-            Array(6).fill(0).map((_, i) => (
-              <Card key={i} className="overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <Skeleton className="h-5 w-20" />
-                      <Skeleton className="h-5 w-24" />
+            Array(6)
+              .fill(0)
+              .map((_, i) => (
+                <Card key={i} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <Skeleton className="h-5 w-20" />
+                        <Skeleton className="h-5 w-24" />
+                      </div>
+                      <Skeleton className="h-6 w-48 mb-2" />
+                      <Skeleton className="h-4 w-32 mb-3" />
+                      <div className="flex justify-between mt-4">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
                     </div>
-                    <Skeleton className="h-6 w-48 mb-2" />
-                    <Skeleton className="h-4 w-32 mb-3" />
-                    <div className="flex justify-between mt-4">
+                    <div className="border-t border-border p-3 bg-muted/30 flex justify-between items-center">
                       <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-8 w-8 rounded-full" />
                     </div>
-                  </div>
-                  <div className="border-t border-border p-3 bg-muted/30 flex justify-between items-center">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                  </CardContent>
+                </Card>
+              ))
           ) : filteredByStatus.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <p className="text-muted-foreground">
@@ -229,7 +258,7 @@ export default function Projects() {
               </p>
             </div>
           ) : (
-            filteredByStatus.map((project: any) => (
+            filteredByStatus.map((project) => (
               <Card key={project.id} className="overflow-hidden card-hover">
                 <CardContent className="p-0">
                   <div className="p-4">
@@ -262,8 +291,8 @@ export default function Projects() {
                       {project.description?.substring(0, 30) || "Proje detayı"}
                       {project.description?.length > 30 ? "..." : ""}
                     </span>
-                    <Button 
-                      size="icon" 
+                    <Button
+                      size="icon"
                       variant="ghost"
                       onClick={() => navigate(`/projects/${project.id}`)}
                     >

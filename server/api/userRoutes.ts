@@ -13,6 +13,9 @@ router.post("/users", async (req: Request, res: Response, next: NextFunction) =>
     const createdUser = await storage.createUser({
       ...validatedData,
       password: hashedPassword,
+      companyName: validatedData.companyName ?? null,
+      phone: validatedData.phone ?? null,
+      position: validatedData.position ?? null,
     });
     res.status(201).json(createdUser);
   } catch (error) {

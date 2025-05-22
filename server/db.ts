@@ -16,7 +16,8 @@ async function initializeDbConnection() {
     console.log("[VERİTABANI] Supabase/Neon veritabanı bağlantısı deneniyor...");
     const sql = neon(process.env.DATABASE_URL);
     dbInstance = drizzle(sql, { schema });
-    await dbInstance.select({ mevcutZaman: schema.sql`now()` });
+    // Eğer schema.sql yoksa, doğrudan bir sorgu yaz:
+    await dbInstance.execute("SELECT NOW()");
     console.log("[VERİTABANI] Veritabanı bağlantısı başarıyla kuruldu ve test edildi.");
   } catch (error) {
     console.error("[VERİTABANI] HATA: Veritabanı bağlantısı kurulamadı veya test sorgusu başarısız oldu:", error);

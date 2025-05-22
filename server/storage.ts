@@ -54,6 +54,7 @@ export interface Task {
   projectId: number | null;
   assignedToId: number | null;
   createdById: number | null;
+  accountId?: number | null;
 }
 
 export interface Quote {
@@ -68,6 +69,11 @@ export interface Quote {
   subject: string;
   totalAmount: string;
   paymentTerms?: string | null;
+  validUntil?: Date | null;
+  contactPerson?: string | null;
+  notes?: string | null;
+  currency?: string | null;
+  items?: QuoteItem[];
 }
 
 export interface QuoteItem {
@@ -102,7 +108,6 @@ export interface IStorage {
   createUser(user: Omit<User, "id" | "createdAt" | "updatedAt">): Promise<User>;
   getUsers(): Promise<User[]>;
   getUserById(id: number): Promise<User | undefined>;
-  // Diğer CRUD fonksiyonları...
 }
 
 export class MemStorage implements IStorage {
@@ -131,9 +136,6 @@ export class MemStorage implements IStorage {
   async getUserById(id: number): Promise<User | undefined> {
     return this.users.find(u => u.id === id);
   }
-
-  // Diğer CRUD fonksiyonlarını da aynı şekilde ekleyebilirsin.
 }
 
-// Varsayılan olarak bir storage instance'ı oluşturup export edebilirsin:
 export const storage = new MemStorage();

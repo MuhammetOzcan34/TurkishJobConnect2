@@ -20,34 +20,69 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, Plus, Filter, MoreHorizontal, File, Briefcase, Pencil, Trash } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export default function Accounts() {
   const [, navigate] = useLocation();
   const search = useSearch();
   const [activeTab, setActiveTab] = useState("list");
-  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+
   const { data: accounts, isLoading } = useQuery({
     queryKey: ["/api/accounts"],
   });
 
   const urlSearchQuery = new URLSearchParams(search).get("q") || "";
 
-  const filteredAccounts = accounts?.filter((account: any) => {
-    if (!urlSearchQuery) return true;
-    const searchTerm = urlSearchQuery.toLowerCase();
-    return account.name.toLowerCase().includes(searchTerm) ||
-           (account.contact && account.contact.toLowerCase().includes(searchTerm)) ||
-           (account.email && account.email.toLowerCase().includes(searchTerm)) ||
-           (account.phone && account.phone.toLowerCase().includes(searchTerm));
-  }
-) || [];
+  const filteredAccounts = (accounts || []).filter((account: any) => {
+    const term = searchTerm || urlSearchQuery;
+    if (!term) return true;
+    const searchLower = term.toLowerCase();
+    return (
+      account.name?.toLowerCase().includes(searchLower) ||
+      account.contact?.toLowerCase().includes(searchLower) ||
+      account.email?.toLowerCase().includes(searchLower) ||
+      account.phone?.toLowerCase().includes(searchLower) ||
+      account.branch?.toLowerCase().includes(searchLower)
+    );
+  });
 
+  // Hareketler için örnek veri
+  const exampleMovements = [
+    {
+      date: "15.05.2023",
+      account: "ABC Şirketi",
+      description: "Proje No: P0001 - Web Sitesi Projesi",
+      type: "Borç",
+      debt: "₺15.000,00",
+      credit: "-",
+      balance: "₺15.000,00",
+      icon: <Briefcase className="h-4 w-4" />
+    },
+    {
+      date: "18.05.2023",
+      account: "ABC Şirketi",
+      description: "İlk Ödeme",
+      type: "Alacak",
+      debt: "-",
+      credit: "₺7.500,00",
+      balance: "₺7.500,00",
+      icon: <MoreHorizontal className="h-4 w-4" />
+    }
+  ];
 
   return (
     <div className="pb-20 md:pb-6">
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-semibold">Cari Hesaplar</h2>
         <div className="flex w-full sm:w-auto space-x-2">
+          <Input
+            placeholder="Ara..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-xs"
+          />
           <Button variant="outline" className="flex items-center">
             <Filter className="h-4 w-4 mr-1" />
             <span className="hidden sm:inline">Filtrele</span>
@@ -84,7 +119,6 @@ export default function Accounts() {
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
-                      // Loading skeletons
                       Array(5).fill(0).map((_, i) => (
                         <TableRow key={i}>
                           <TableCell><Skeleton className="h-5 w-32" /></TableCell>
@@ -100,7 +134,7 @@ export default function Accounts() {
                     ) : filteredAccounts.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                          {urlSearchQuery
+                          {searchTerm || urlSearchQuery
                             ? "Arama kriterine uygun cari hesap bulunamadı."
                             : "Cari hesap bulunamadı."}
                         </TableCell>
@@ -149,8 +183,7 @@ export default function Accounts() {
                                 className="h-8 w-8"
                                 onClick={() => { 
                                   setActiveTab("movements");
-                                  // Burada form elemanlarına ilgili hesabın bilgilerini doldurabilirsiniz
-                                  // Örnek: setSelectedAccount(account.id);
+                                  setSelectedAccountId(account.id);
                                 }}
                               >
                                 <File className="h-4 w-4" />
@@ -194,7 +227,15 @@ export default function Accounts() {
               <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium mb-1 block">Cari Hesap</label>
-                  <Input placeholder="Cari hesap seçin..." />
+                  <Input
+                    placeholder="Cari hesap seçin..."
+                    value={
+                      selectedAccountId
+                        ? (filteredAccounts.find((a: any) => a.id === selectedAccountId)?.name || "")
+                        : ""
+                    }
+                    readOnly
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">Tarih Aralığı</label>
@@ -224,7 +265,6 @@ export default function Accounts() {
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
-                      // Loading skeletons
                       Array(5).fill(0).map((_, i) => (
                         <TableRow key={i}>
                           <TableCell><Skeleton className="h-5 w-24" /></TableCell>
@@ -238,37 +278,22 @@ export default function Accounts() {
                         </TableRow>
                       ))
                     ) : (
-                      // Example transactions
-                      <>
-                        <TableRow>
-                          <TableCell>15.05.2023</TableCell>
-                          <TableCell>ABC Şirketi</TableCell>
-                          <TableCell>Proje No: P0001 - Web Sitesi Projesi</TableCell>
-                          <TableCell>Borç</TableCell>
-                          <TableCell className="text-right">₺15.000,00</TableCell>
-                          <TableCell className="text-right">-</TableCell>
-                          <TableCell className="text-right">₺15.000,00</TableCell>
+                      exampleMovements.map((m, i) => (
+                        <TableRow key={i}>
+                          <TableCell>{m.date}</TableCell>
+                          <TableCell>{m.account}</TableCell>
+                          <TableCell>{m.description}</TableCell>
+                          <TableCell>{m.type}</TableCell>
+                          <TableCell className="text-right">{m.debt}</TableCell>
+                          <TableCell className="text-right">{m.credit}</TableCell>
+                          <TableCell className="text-right">{m.balance}</TableCell>
                           <TableCell className="text-right">
                             <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Briefcase className="h-4 w-4" />
+                              {m.icon}
                             </Button>
                           </TableCell>
                         </TableRow>
-                        <TableRow>
-                          <TableCell>18.05.2023</TableCell>
-                          <TableCell>ABC Şirketi</TableCell>
-                          <TableCell>İlk Ödeme</TableCell>
-                          <TableCell>Alacak</TableCell>
-                          <TableCell className="text-right">-</TableCell>
-                          <TableCell className="text-right">₺7.500,00</TableCell>
-                          <TableCell className="text-right">₺7.500,00</TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      </>
+                      ))
                     )}
                   </TableBody>
                 </Table>
