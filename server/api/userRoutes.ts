@@ -3,6 +3,9 @@ import { insertUserSchema } from "../../shared/validation";
 import { storage } from "../storage";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import dashboardRoutes from "./api/dashboardRoutes";
+import userRoutes from "./api/userRoutes";
+import { useQuery } from "react-query";
 
 const router = Router();
 
@@ -27,11 +30,18 @@ router.post("/users", async (req: Request, res: Response) => {
   }
 });
 
+// Kullanıcıları getir
 router.get("/users", async (req: Request, res: Response) => {
-  // Express 5+ kullanılıyorsa, async route handler'larındaki hatalar otomatik olarak yakalanır.
-  // storage.getUsers() bir hata fırlatırsa, Express bunu hata işleme ara katmanına iletecektir.
-  const users = await storage.getUsers();
-  res.json(users);
+  res.json([{ id: 1, name: "Admin", email: "admin@example.com" }]); // Örnek veri
 });
+
+const { data: stats } = useQuery({
+  queryKey: [`${import.meta.env.VITE_API_URL}/dashboard/stats`],
+});
+
+export async function registerRoutes(app: Express) {
+  app.use("/api", dashboardRoutes);
+  app.use("/api", userRoutes);
+}
 
 export default router;
