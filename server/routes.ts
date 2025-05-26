@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import dashboardRoutes from './api/dashboardRoutes';
-import userRoutes from './api/userRoutes';
+import dashboardRoutes from './routes/dashboard';
+import userRoutes from './routes/user';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -13,5 +13,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api', dashboardRoutes);
   app.use('/api', userRoutes);
 
-  return httpServer;
-}
+  return httpServer;}
