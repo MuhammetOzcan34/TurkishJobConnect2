@@ -30,7 +30,7 @@ export default defineConfig({
   },
   define: {
     'process.env.VITE_API_URL': JSON.stringify(process.env.NODE_ENV === 'production'
-      ? 'https://turkish-job-connect2-fk7bbm5kd-muhammetozcan34s-projects.vercel.app'
+      ? 'https://turkish-job-connect2-7pq35eeso-muhammetozcan34s-projects.vercel.app'
       : 'http://localhost:3000'
     ),
   },

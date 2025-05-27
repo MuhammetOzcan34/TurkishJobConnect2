@@ -2,13 +2,19 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 // API base URL'i
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://turkish-job-connect2-qwnh68z6j-muhammetozcan34s-projects.vercel.app'
+  ? 'https://turkish-job-connect2-7pq35eeso-muhammetozcan34s-projects.vercel.app'
   : 'http://localhost:3000';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    let errorMessage;
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.message || res.statusText;
+    } catch {
+      errorMessage = await res.text() || res.statusText;
+    }
+    throw new Error(`${res.status}: ${errorMessage}`);
   }
 }
 
@@ -21,7 +27,10 @@ export async function apiRequest(
   
   const res = await fetch(fullUrl, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: {
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      "Accept": "application/json"
+    },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -36,8 +45,14 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    const url = queryKey[0] as string;
+    const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+    
+    const res = await fetch(fullUrl, {
       credentials: "include",
+      headers: {
+        "Accept": "application/json"
+      }
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
