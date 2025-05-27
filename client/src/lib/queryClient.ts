@@ -2,7 +2,7 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 // API base URL'i
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://turkish-job-connect2-mr6h9f2iq-muhammetozcan34s-projects.vercel.app'
+  ? 'https://turkish-job-connect2-o5xzcbpba-muhammetozcan34s-projects.vercel.app'
   : 'http://localhost:3000';
 
 async function throwIfResNotOk(res: Response) {

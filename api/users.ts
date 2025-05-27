@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import { withCors } from './_middleware';
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method === 'POST') {
     try {
       const { username, email, password } = req.body;
@@ -30,4 +31,6 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   } else {
     res.status(405).json({ error: 'Method not allowed' });
   }
-} 
+}
+
+export default withCors(handler); 

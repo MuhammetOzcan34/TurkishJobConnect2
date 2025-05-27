@@ -1,8 +1,10 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import { withCors } from '../_middleware';
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
@@ -14,4 +16,6 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     console.error('Error in /api/dashboard/recent-quotes:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
-} 
+}
+
+export default withCors(handler); 
