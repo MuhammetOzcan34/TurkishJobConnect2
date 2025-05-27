@@ -16,15 +16,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server/dist/index.js"
-    },
-    {
-      "src": "/dashboard/(.*)",
-      "dest": "server/dist/index.js"
-    },
-    {
-      "src": "/users/(.*)",
-      "dest": "server/dist/index.js"
+      "dest": "/server/dist/index.js"
     },
     {
       "handle": "filesystem"
